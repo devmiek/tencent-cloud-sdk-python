@@ -459,9 +459,9 @@ class Client(client.AbstractClient):
                         del parameter_names[0]
                         args = args[1 : ]
 
-                for index in range(len(args)):
-                    function_event[parameter_names[index]] = args[index]
-                
+                for index, value in enumerate(args):
+                    function_event[parameter_names[index]] = value
+
                 for name in kwargs:
                     function_event[name] = kwargs[name]
 
