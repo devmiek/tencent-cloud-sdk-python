@@ -6,6 +6,8 @@ Tencent Cloud SDK for Python, which provides an easier-to-use abstract client an
 
 By integrating and using the Tencent Cloud SDK for Python, you can achieve fast and secure access to the Tencent Cloud API in an object-oriented programming manner, without having to pay attention to implementation details.
 
+**Features:** Tencent Cloud SDK for Python supports full asynchronous programming.
+
 ## Navigation
 - [Homepage](https://github.com/nobody-night/tencent-cloud-sdk-python)
 - Documentation
@@ -39,6 +41,8 @@ pip install tencent-cloud-sdk-serverless-functions
 
 ## Getting Started
 With the Tencent Cloud SDK for Python, you can use Tencent Cloud products with Python's object-oriented programming.
+
+Currently Tencent Cloud SDK for Python supports programmatic use in synchronous and asynchronous ways. Asynchronous way can write applications with better performance. Below we will show you how to use the Tencent Cloud SDK for Python in multiple consecutive code snippets using synchronous programming.
 
 ### Serverless Cloud Function
 For example, Invoke has created a Serverless Cloud Function:
@@ -91,6 +95,8 @@ The local variable `return_value` now has the actual return value of the Cloud F
 The method `easy_invoke` will attempt to infer the return value in the given Cloud Function result and return the return value as a Python native data type.
 
 **Tips:** If an error occurs for a given Cloud Function runtime, an `InvokeError` exception is thrown. The above exceptions are defined in the `tencent.cloud.serverless.functions.errors` module.
+
+See the [Quick-Start](quickstart.py) source code for the complete demo code.
 
 ### Other Tencent Cloud Products
 For Tencent Cloud products that do not yet provide a product client in the Tencent Cloud SDK, a universal client can be used.
