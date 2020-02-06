@@ -1,4 +1,4 @@
-# tencent.cloud.core.__init__ is python-3.6 source file
+# tests.cloud.auth.credentials is python-3.6 source file
 
 # MIT License
 # 
@@ -22,22 +22,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-'''
-This package implements the core functions of the Tencent Cloud SDK.
-    Packages for the Tencent Cloud SDK must rely on the package to operate.
+import time
 
-Raises:
-    RuntimeError: Current Python runtime version is less than 3.6
-'''
+def run_unit_tests():
+    from tencent.cloud.auth import credentials
 
-import sys
+    credentials_context: credentials.Credentials = credentials.Credentials(
+        secret_id = 'AKIDz8krbsJ5yKBZQpn74WFkmLPx3EXAMPLF',
+        secret_key = 'Gu5t9xGARNpq86cd98joQYCN3EXAMPLF'
+    )
 
-# Check if the current Python runtime version is less than 3.6
+    credentials_context.generate_and_signature(
+        request_hostname = 'scf.tencentcloudapi.com',
+        request_method = 'POST',
+        request_parameters = {
+            'Namespace': 'default',
+            'FunctionName': 'hello'
+        },
+        signature_product_id = 'scf',
+        signature_timestamp = int(time.time())
+    )
 
-if sys.version_info.major < 3:
-    raise RuntimeError('runtime version is lower than 3.6')
-
-if (sys.version_info.major == 3 and
-    sys.version_info.minor < 6
-):
-    raise RuntimeError('runtime version is lower than 3.6')
+    print('info: <tencent.cloud.auth.credentials> test completed')

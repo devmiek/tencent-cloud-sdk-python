@@ -1,4 +1,4 @@
-# tencent.cloud.core.__init__ is python-3.6 source file
+# setup is python-3.6 source file
 
 # MIT License
 # 
@@ -23,21 +23,39 @@
 # SOFTWARE.
 
 '''
-This package implements the core functions of the Tencent Cloud SDK.
-    Packages for the Tencent Cloud SDK must rely on the package to operate.
-
-Raises:
-    RuntimeError: Current Python runtime version is less than 3.6
+Tencent Cloud SDK for Python Sub-Package installer
+https://github.com/nobody-night/tencent-cloud-sdk-python
 '''
 
-import sys
+import setuptools
 
-# Check if the current Python runtime version is less than 3.6
-
-if sys.version_info.major < 3:
-    raise RuntimeError('runtime version is lower than 3.6')
-
-if (sys.version_info.major == 3 and
-    sys.version_info.minor < 6
-):
-    raise RuntimeError('runtime version is lower than 3.6')
+setuptools.setup(
+    name = 'tencent-cloud-sdk-core',
+    version = '0.1.1',
+    packages = [
+        'tencent.cloud.core'
+    ],
+    keywords = 'tencent-cloud sdk-python',
+    license = 'MIT License',
+    author = 'Tencent Cloud',
+    author_email = 'support@xiaoyy.org',
+    description = (
+        'Tencent Cloud SDK for Python components. '
+        'This package is the core component of the '
+        'Tencent Cloud SDK. Most Tencent Cloud SDK '
+        'components depend on this package.'
+    ),
+    url = 'https://github.com/nobody-night/tencent-cloud-sdk-python',
+    python_requires = '>=3.6',
+    zip_safe = False,
+    classifiers = (
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Development Status :: 5 - Production/Stable'
+    ),
+    install_requires = [
+        'aiohttp>=3.6.2',
+        'tencent-cloud-sdk-auth>=0.1.1'
+    ]
+)

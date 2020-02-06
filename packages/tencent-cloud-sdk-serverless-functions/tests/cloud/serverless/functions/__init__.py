@@ -1,4 +1,4 @@
-# tencent.cloud.core.__init__ is python-3.6 source file
+# tests.cloud.srverless.functions is python-3.6 source file
 
 # MIT License
 # 
@@ -22,22 +22,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-'''
-This package implements the core functions of the Tencent Cloud SDK.
-    Packages for the Tencent Cloud SDK must rely on the package to operate.
+def run_unit_tests():
+    from tests.cloud.serverless.functions import errors
+    from tests.cloud.serverless.functions import helper
+    from tests.cloud.serverless.functions import client
 
-Raises:
-    RuntimeError: Current Python runtime version is less than 3.6
-'''
-
-import sys
-
-# Check if the current Python runtime version is less than 3.6
-
-if sys.version_info.major < 3:
-    raise RuntimeError('runtime version is lower than 3.6')
-
-if (sys.version_info.major == 3 and
-    sys.version_info.minor < 6
-):
-    raise RuntimeError('runtime version is lower than 3.6')
+    errors.run_unit_tests()
+    helper.run_unit_tests()
+    client.run_unit_tests()

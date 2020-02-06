@@ -1,4 +1,4 @@
-# tencent.cloud.core.__init__ is python-3.6 source file
+# tests.cloud.core.version is python-3.6 source file
 
 # MIT License
 # 
@@ -22,22 +22,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-'''
-This package implements the core functions of the Tencent Cloud SDK.
-    Packages for the Tencent Cloud SDK must rely on the package to operate.
+def run_unit_tests():
+    from tencent.cloud.core import version
 
-Raises:
-    RuntimeError: Current Python runtime version is less than 3.6
-'''
+    version.get_version_text()
 
-import sys
-
-# Check if the current Python runtime version is less than 3.6
-
-if sys.version_info.major < 3:
-    raise RuntimeError('runtime version is lower than 3.6')
-
-if (sys.version_info.major == 3 and
-    sys.version_info.minor < 6
-):
-    raise RuntimeError('runtime version is lower than 3.6')
+    print('info: <tencent.cloud.core.version> test completed')
