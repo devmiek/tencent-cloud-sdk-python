@@ -90,7 +90,7 @@ The local variable `return_value` now has the actual return value of the Cloud F
 
 The method `easy_invoke` will attempt to infer the return value in the given Cloud Function result and return the return value as a Python native data type.
 
-**Tips:** If an error occurs for a given Cloud Function runtime, an `InvokeError` exception is thrown.
+**Tips:** If an error occurs for a given Cloud Function runtime, an `InvokeError` exception is thrown. The above exceptions are defined in the `tencent.cloud.serverless.functions.errors` module.
 
 ### Other Tencent Cloud Products
 For Tencent Cloud products that do not yet provide a product client in the Tencent Cloud SDK, a universal client can be used.
@@ -129,6 +129,8 @@ action_result: dict = virtual_machine_client.action(
     action_version = '2017-03-12'   # Version name of the Tencent Cloud API
 )
 ```
+
+**Tips:** If a given Tencent Cloud API encounters an error, an `ActionError` exception is thrown; if the given Tencent Cloud API response is not as expected, an `ActionResultError` exception is thrown. The above exceptions are defined in the `tencent.cloud.core.errors` module.
 
 Print unique identifiers for all zones:
 
