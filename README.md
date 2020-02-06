@@ -1,5 +1,7 @@
 # Tencent Cloud SDK for Python
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f25eb74893904716ad56a9b5f4675ee0)](https://app.codacy.com/manual/nobody-night/tencent-cloud-sdk-python?utm_source=github.com&utm_medium=referral&utm_content=nobody-night/tencent-cloud-sdk-python&utm_campaign=Badge_Grade_Dashboard)
+
 > **Tips:** This project is currently under development and this document is for reference only.
 
 Tencent Cloud SDK for Python, which provides an easier-to-use abstract client and advanced features.
