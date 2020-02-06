@@ -1,6 +1,7 @@
 # Tencent Cloud SDK for Python
 
-> **Tips:** This project is currently under development and this document is for reference only.
+[![license](https://img.shields.io/github/license/nobody-night/stopwatch-python)](LICENSE)
+![codacy](https://api.codacy.com/project/badge/Grade/90542f3a853f429886d511e28bb2e9b2)
 
 Tencent Cloud SDK for Python, which provides an easier-to-use abstract client and advanced features.
 
