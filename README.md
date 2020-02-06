@@ -7,7 +7,7 @@ Tencent Cloud SDK for Python, which provides an easier-to-use abstract client an
 By integrating and using the Tencent Cloud SDK for Python, you can achieve fast and secure access to the Tencent Cloud API in an object-oriented programming manner, without having to pay attention to implementation details.
 
 ## Navigation
-- [Homepage](https://smallso.gitbook.io/stopwatch/)
+- [Homepage](https://github.com/nobody-night/tencent-cloud-sdk-python)
 - Documentation
   - English (Writing...)
   - 简体中文 (Writing...)
