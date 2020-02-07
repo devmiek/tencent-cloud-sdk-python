@@ -49,10 +49,11 @@ setuptools.setup(
     python_requires = '>=3.6',
     zip_safe = False,
     classifiers = (
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Development Status :: 5 - Production/Stable'
+        # 'Development Status :: 5 - Production/Stable'
+        'Development Status :: 4 - Beta'
     ),
     install_requires = [
         'tencent-cloud-sdk-core>=0.1.1'
