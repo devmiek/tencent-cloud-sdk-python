@@ -1545,7 +1545,7 @@ class AbstractClient(client.BaseClient):
         region_id: str,
         namespace_name: str,
         requirement_context: dict = None
-    ) -> dict:
+    ) -> object:
         '''
         Get an overview of the Cloud Functions you have created.
 
@@ -1734,6 +1734,7 @@ class AbstractClient(client.BaseClient):
 
         return {
             'info': {
+                'namespace_name': action_result['Namespace'],
                 'status': action_result['Status'],
                 'type': action_result['Type'],
                 'id': action_result['FunctionId'],
