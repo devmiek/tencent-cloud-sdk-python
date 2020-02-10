@@ -1386,7 +1386,7 @@ class AbstractClient(client.BaseClient):
                         'return_result': function_result['RetMsg'],
                         'is_successful': (function_result['InvokeFinished'] == 1 and
                             function_result['RetCode'] == 0),
-                        'start_timestamp': function_result['StartTime'],
+                        'start_time': function_result['StartTime'],
                         'run_duration': function_result['Duration'],
                         'bill_duration': function_result['BillDuration'],
                         'usage_memory_size': function_result['MemUsage'],
