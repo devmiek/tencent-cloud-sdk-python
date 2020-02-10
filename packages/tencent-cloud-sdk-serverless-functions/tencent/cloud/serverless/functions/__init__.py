@@ -123,6 +123,16 @@ class FunctionResultFuture(asyncio.Future):
     def __await__(self):
         self._complete_callback(None)
         return super().__await__()
+    
+    def get_request_id(self) -> str:
+        '''
+        Get the request ID for this Cloud Function invoke.
+
+        Returns:
+            Returns the request ID string.
+        '''
+
+        return self.__function_request_id
 
 class FunctionSchedule:
     '''
@@ -344,18 +354,8 @@ class Client(client.AbstractClient):
             return self.get_event_loop().run_until_complete(self.easy_invoke_async(region_id,
                 namespace_name, function_name, function_event, function_version, False))
         else:
-            return FunctionResultFuture(
-                function_client = self,
-                function_metadata = {
-                    'region_id': region_id,
-                    'namespace_name': namespace_name,
-                    'function_name': function_name,
-                    'function_version': function_version
-                },
-                function_request_id = (self.get_event_loop().run_until_complete(
-                    self.invoke_async(region_id, namespace_name, function_name, function_event,
-                    function_version, True))['request_id'])
-            )
+            return (self.get_event_loop().run_until_complete(self.invoke_async(region_id,
+                namespace_name, function_name, function_event, function_version, True))['request_id'])
 
     async def select_function_async(self,
         region_id: str,
