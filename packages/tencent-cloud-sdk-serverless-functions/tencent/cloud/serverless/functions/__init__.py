@@ -251,7 +251,7 @@ class FunctionSchedule:
         return self.__invoke_future.result()
     
     @property
-    def return_value(self) -> dict:
+    def return_value(self) -> object:
         '''
         Cloud Function invoke return value.
 
