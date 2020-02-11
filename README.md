@@ -12,8 +12,8 @@ By integrating and using the Tencent Cloud SDK for Python, you can achieve fast 
 ## Navigation
 - [Homepage](https://github.com/nobody-night/tencent-cloud-sdk-python)
 - Documentation
-  - English (Writing...)
-  - [简体中文 (Updating...)](https://smallso.gitbook.io/tencent-cloud-sdk/)
+  - [English (Writing...)](https://smallso.gitbook.io/tencent-cloud-sdk/v/english/)
+  - [简体中文](https://smallso.gitbook.io/tencent-cloud-sdk/)
 - [Release Notes](https://github.com/nobody-night/tencent-cloud-sdk-python/releases)
 - [License](LICENSE)
 - [Author Homepage](https://cloud.tencent.com/)
