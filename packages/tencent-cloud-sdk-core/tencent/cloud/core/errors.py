@@ -78,6 +78,9 @@ class ResponseError(ClientError):
         if error_message and not isinstance(error_message, str):
             raise ValueError('<error_message> value invalid')
 
+        self.status_code: int = status_code
+        self.error_message: str = error_message
+
         super().__init__(error_message)
 
 class ActionError(ClientError):
