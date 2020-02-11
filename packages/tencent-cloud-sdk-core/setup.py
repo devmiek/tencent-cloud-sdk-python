@@ -48,13 +48,13 @@ setuptools.setup(
     url = 'https://github.com/nobody-night/tencent-cloud-sdk-python',
     python_requires = '>=3.6',
     zip_safe = False,
-    classifiers = (
+    classifiers = [
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         # 'Development Status :: 5 - Production/Stable'
         'Development Status :: 4 - Beta'
-    ),
+    ],
     install_requires = [
         'aiohttp>=3.6.2',
         'tencent-cloud-sdk-auth>=0.1.1'
