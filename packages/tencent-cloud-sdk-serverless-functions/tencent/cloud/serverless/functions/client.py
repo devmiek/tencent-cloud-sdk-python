@@ -483,7 +483,16 @@ class AbstractClient(client.BaseClient):
             return {
                 'request_id': action_result['Result']['FunctionRequestId']
             } if function_async else {
+                'function_name': function_name,
                 'return_result': action_result['Result']['RetMsg'],
+                'is_successful': action_result['Result']['InvokeResult'] == 0,
+                'start_time': None,
+                'run_duration': action_result['Result']['Duration'],
+                'bill_duration': action_result['Result']['BillDuration'],
+                'usage_memory_size': action_result['Result']['MemUsage'],
+                'run_log': action_result['Result']['Log'],
+                'log_level': None,
+                'log_source': None,
                 'request_id': action_result['Result']['FunctionRequestId']
             }
         except KeyError as error:
@@ -1383,6 +1392,7 @@ class AbstractClient(client.BaseClient):
             try:
                 for function_result in action_result['Data']:
                     yield {
+                        'function_name': function_name,
                         'return_result': function_result['RetMsg'],
                         'is_successful': (function_result['InvokeFinished'] == 1 and
                             function_result['RetCode'] == 0),
