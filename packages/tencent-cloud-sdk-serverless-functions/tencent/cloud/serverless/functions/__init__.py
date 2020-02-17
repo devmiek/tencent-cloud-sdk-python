@@ -177,8 +177,13 @@ class FunctionSchedule:
         self.__invoke_future: asyncio.Future = None
         self.__invoke_handle: asyncio.TimerHandle = None
 
+        current_unix_timestamp: int = int(time.time())
+
+        if invoke_timestamp <= current_unix_timestamp:
+            raise ValueError('<invoke_timestamp> value invalid')
+
         self.__function_client.get_event_loop().call_later(
-            delay = invoke_timestamp - int(time.time()),
+            delay = invoke_timestamp - current_unix_timestamp,
             callback = self._invoke_callback
         )
 
