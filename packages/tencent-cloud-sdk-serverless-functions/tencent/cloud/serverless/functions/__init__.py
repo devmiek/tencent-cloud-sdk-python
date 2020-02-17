@@ -35,6 +35,9 @@ import time
 import asyncio
 import inspect
 
+from tencent.cloud.core import proxies
+from tencent.cloud.auth import credentials
+
 from tencent.cloud.serverless.functions import errors
 from tencent.cloud.serverless.functions import client
 from tencent.cloud.serverless.functions import helper
@@ -146,7 +149,7 @@ class FunctionSchedule:
         function_client: client.AbstractClient,
         invoke_context: dict,
         invoke_timestamp: int,
-        invoked_callback: object = None
+        callback_context: dict = None
     ):
         if not function_client or not isinstance(function_client, client.AbstractClient):
             raise ValueError('<function_client> value invalid')
@@ -156,11 +159,20 @@ class FunctionSchedule:
 
         if not invoke_timestamp or not isinstance(invoke_timestamp, int):
             raise ValueError('<invoke_timestamp> value invalid')
+        
+        if not callback_context or not isinstance(callback_context, dict):
+            raise ValueError('<callback_context> value invalid')
 
         self.__function_client: client.AbstractClient = function_client
         self.__invoke_context: dict = invoke_context
         self.__invoke_timestamp: int = invoke_timestamp
-        self.__invoked_callback: object = invoked_callback
+
+        try:
+            self.__schedule_created_callback: object = callback_context['created']
+            self.__schedule_invoked_callback: object = callback_context['invoked']
+            self.__schedule_completed_callback: object = callback_context['completed']
+        except KeyError as error:
+            raise ValueError('<callback_context> missing field: ' + str(error))
 
         self.__invoke_future: asyncio.Future = None
         self.__invoke_handle: asyncio.TimerHandle = None
@@ -169,6 +181,9 @@ class FunctionSchedule:
             delay = invoke_timestamp - int(time.time()),
             callback = self._invoke_callback
         )
+
+        if self.__schedule_created_callback:
+            self.__schedule_created_callback(self)
 
     def _invoke_callback(self):
         '''
@@ -192,11 +207,15 @@ class FunctionSchedule:
         '''
 
         if invoke_result_future.exception():
-            if not self.__invoked_callback:
+            if not self.__schedule_invoked_callback:
                 raise invoke_result_future.exception()
 
-        if self.__invoked_callback:
-            self.__invoked_callback(self)
+        try:
+            if self.__schedule_invoked_callback:
+                self.__schedule_invoked_callback(self)
+        finally:
+            if self.__schedule_completed_callback:
+                self.__schedule_completed_callback(self)
 
     def cancel(self):
         '''
@@ -210,7 +229,10 @@ class FunctionSchedule:
             raise errors.StatusError('invoke has started')
 
         self.__invoke_handle.cancel()
-    
+
+        if self.__schedule_completed_callback:
+            self.__schedule_completed_callback(self)
+
     @property
     def is_successful(self) -> bool:
         '''
@@ -271,10 +293,20 @@ class Client(client.AbstractClient):
 
     Args:
         credentials_context: Credential context instance.
+        proxies_context: Proxy server context instance.
     
     Raises:
         ValueError: Parameter values are not as expected.
     '''
+
+    def __init__(self,
+        credentials_context: credentials.Credentials = None,
+        proxies_context: proxies.Proxies = None
+    ):
+        self.__schedule_invoke_waited: bool = False
+        self.__schedule_invoke_count: int = 0
+
+        super().__init__(credentials_context, proxies_context)
 
     async def easy_invoke_async(self,
         region_id: str,
@@ -473,6 +505,34 @@ class Client(client.AbstractClient):
 
         return decorator_handler
 
+    def _schedule_created_callback(self,
+        function_schedule: FunctionSchedule
+    ):
+        '''
+        The callback method that the timed invoke task has created.
+        '''
+
+        self.__schedule_invoke_count += 1
+
+    def _schedule_completed_callback(self,
+        function_schedule: FunctionSchedule
+    ):
+        '''
+        A callback method that timing a invoked task that has completed
+            or been cancelled.
+        
+        If all timed invoke tasks have completed and the instance method
+            run_schedule is being called, the method will attempt to stop
+            the event loop to release the instance method run_schedule.
+        '''
+
+        self.__schedule_invoke_count -= 1
+
+        if (self.__schedule_invoke_waited and
+            self.__schedule_invoke_count == 0
+        ):
+            self.get_event_loop().stop()
+
     def schedule_invoke(self,
         region_id: str,
         namespace_name: str,
@@ -520,8 +580,37 @@ class Client(client.AbstractClient):
                 'function_async': function_async
             },
             invoke_timestamp = invoke_timestamp,
-            invoked_callback = invoked_callback
+            callback_context = {
+                'created': self._schedule_created_callback,
+                'completed': self._schedule_completed_callback,
+                'invoked': invoked_callback
+            }
         )
+
+    def run_schedule(self):
+        '''
+        Run the created scheduled invoke task.
+
+        Note that this method should ensure that it is used only
+            in synchronous programming mode, otherwise the behavior
+            is undefined.
+
+        Raises:
+            StatusError: There are no tasks to run or are running.
+        '''
+
+        if self.__schedule_invoke_count < 1:
+            raise errors.StatusError('no scheduled invoke tasks')
+
+        if self.get_event_loop().is_running():
+            raise errors.StatusError('cannot be run repeatedly')
+
+        self.__schedule_invoke_waited = True
+
+        try:
+            self.get_event_loop().run_forever()
+        finally:
+            self.__schedule_invoke_waited = False
 
 # Built-in client instances for specific operating environments
 __builtin_managed_client: Client = None
