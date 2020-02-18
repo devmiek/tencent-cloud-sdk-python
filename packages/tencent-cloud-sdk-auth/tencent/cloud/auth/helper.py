@@ -25,6 +25,9 @@
 def generate_url_query_string(
     request_parameters: dict
 ) -> str:
+    raise NotImplementedError
+
+    '''
     if not request_parameters or not isinstance(request_parameters, dict):
         raise ValueError('<request_parameters> value invalid')
 
@@ -32,3 +35,4 @@ def generate_url_query_string(
         NAME = parameter,
         VALUE = request_parameters[parameter]
     ) for parameter in request_parameters)
+    '''

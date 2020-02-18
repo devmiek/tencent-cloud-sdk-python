@@ -298,20 +298,78 @@ class EnvironmentalCredentials(Credentials):
     Represents an auto-configuration authentication context type
         that is appropriate for a specific operating environment.
 
+    Args:
+        variable_name_of_secret_id: Environment variable name with secret-id.
+        variable_name_of_secret_keyEnvironment variable name with secret-key.
+
     Raises:
         EnvironmentError: The current operating environment is not as expected.
         ValueError: The account access key provided by the current operating
             environment is invalid.
     '''
 
-    def __init__(self):
-        if 'TENCENTCLOUD_SECRETID' not in os.environ:
-            raise EnvironmentError('missing environment variable <TENCENTCLOUD_SECRETID>')
+    def __init__(self,
+        variable_name_of_secret_id: str = 'TENCENTCLOUD_SECRETID',
+        variable_name_of_secret_key: str = 'TENCENTCLOUD_SECRETKEY'
+    ):
+        if not variable_name_of_secret_id or not isinstance(variable_name_of_secret_id, str):
+            raise ValueError('<variable_name_of_secret_id> value invalid')
+
+        if not variable_name_of_secret_key or not isinstance(variable_name_of_secret_key, str):
+            raise ValueError('<variable_name_of_secret_key> value invalid')
+
+        if variable_name_of_secret_id not in os.environ:
+            raise EnvironmentError('missing environment variable <{VARIABLE_NAME}>'.format(
+                VARIABLE_NAME = variable_name_of_secret_id
+            ))
         
-        if 'TENCENTCLOUD_SECRETKEY' not in os.environ:
-            raise EnvironmentError('missing environment variable <TENCENTCLOUD_SECRETKEY>')
+        if variable_name_of_secret_key not in os.environ:
+            raise EnvironmentError('missing environment variable <{VARIABLE_NAME}>'.format(
+                VARIABLE_NAME = variable_name_of_secret_key
+            ))
 
         super().__init__(
-            secret_id = os.environ['TENCENTCLOUD_SECRETID'],
-            secret_key = os.environ['TENCENTCLOUD_SECRETKEY']
+            secret_id = os.environ[variable_name_of_secret_id],
+            secret_key = os.environ[variable_name_of_secret_key]
         )
+
+class FileCredentials(Credentials):
+    '''
+    Represents the type of access credential using file credentials.
+
+    This access credential type allows you to store and provide the
+        access credentials applicable to your account as a JSON serialized
+        file. The JSON file that stores access credentials contains at least
+        fields named secretId and secretKey.
+    
+    Args:
+        secret_file_name: File path containing access credentials.
+
+    Raises:
+        ValueError: Parameter values are not as expected.
+        FileNotFoundError: The given access credentials file does not exist
+            or cannot be read.
+        JSONDecodeError: The content of the given access credential file
+            cannot be parsed.
+        KeyError: Mandatory field missing for given access credential file content.
+    '''
+    
+    def __init__(self,
+        secret_file_name: str
+    ):
+        if not secret_file_name or not isinstance(secret_file_name, str):
+            raise ValueError('<secret_file_name> value invalid')
+
+        if not os.access(secret_file_name, os.R_OK):
+            raise FileNotFoundError('no such file or unreadable')
+        
+        with open(secret_file_name, encoding = 'utf-8') as secret_file_handle:
+            secret_context: dict = json.load(secret_file_handle)
+        
+        try:
+            super().__init__(
+                secret_id = secret_context['secretId'],
+                secret_key = secret_context['secretKey']
+            )
+        except KeyError as error:
+            raise KeyError('secret missing field: ' + str(error))
