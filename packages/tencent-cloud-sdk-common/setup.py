@@ -30,10 +30,17 @@ https://github.com/nobody-night/tencent-cloud-sdk-python
 import setuptools
 
 setuptools.setup(
-    name = 'tencent-cloud-sdk-core',
-    version = '0.1.2',
+    name = 'tencent-cloud-sdk-common',
+    version = '0.1.1',
     packages = [
-        'tencent.cloud.core'
+        'tencent.cloud.common',
+        'tencent.cloud.common.aiohttp',
+        'tencent.cloud.common.async_timeout',
+        'tencent.cloud.common.attr',
+        'tencent.cloud.common.chardet',
+        'tencent.cloud.common.idna',
+        'tencent.cloud.common.multidict',
+        'tencent.cloud.common.yarl',
     ],
     keywords = 'tencent-cloud sdk-python',
     license = 'MIT License',
@@ -52,11 +59,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        # 'Development Status :: 5 - Production/Stable'
-        'Development Status :: 4 - Beta'
-    ],
-    install_requires = [
-        'tencent-cloud-sdk-auth>=0.1.1',
-        'tencent-cloud-sdk-common>=0.1.1'
+        'Development Status :: 5 - Production/Stable'
+        # 'Development Status :: 4 - Beta'
     ]
 )

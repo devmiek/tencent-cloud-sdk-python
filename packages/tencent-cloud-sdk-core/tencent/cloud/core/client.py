@@ -66,7 +66,11 @@ Example2:
 import json
 import time
 import asyncio
-import aiohttp
+
+try:
+    import aiohttp
+except ImportError:
+    from tencent.cloud.common import aiohttp
 
 from tencent.cloud.core import errors
 from tencent.cloud.core import version
