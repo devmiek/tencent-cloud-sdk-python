@@ -411,9 +411,10 @@ class LayerStatus:
     Layer status enumerator.
     '''
 
-    Creating: str = 'publishing'
-    Available: str = 'available'
-    Unavailable: str = 'unavailable'
+    Active: str = 'Active'
+    Publishing: str = 'Publishing'
+    PublishFailed: str = 'PublishFailed'
+    Deleted: str = 'Deleted'
 
 class FunctionType:
     '''
@@ -690,6 +691,24 @@ class AbstractClient(client.BaseClient):
                     'Value': function_configure['environments'][name]
                 } for name in function_configure['environments']]
             }
+        
+        if 'layers' in function_configure:
+            try:
+                action_parameters['Layers'] = [{
+                    'LayerName': layer_info['name'],
+                    'LayerVersion': int(layer_info['version'])
+                } for layer_info in function_configure['layers']]
+            except KeyError:
+                raise ValueError('<function_configure> value invalid')
+        
+        if 'dead_letter' in function_configure:
+            try:
+                action_parameters['DeadLetterConfig'] = {
+                    'Type': function_configure['dead_letter']['type'],
+                    'Name': function_configure['dead_letter']['name']
+                }
+            except KeyError:
+                raise ValueError('<function_configure> value invalid')
         
         if function_runtime:
             if not isinstance(function_runtime, str):
@@ -1195,6 +1214,24 @@ class AbstractClient(client.BaseClient):
                     'Value': function_configure['environments'][name]
                 } for name in function_configure['environments']]
             }
+
+        if 'layers' in function_configure:
+            try:
+                action_parameters['Layers'] = [{
+                    'LayerName': layer_info['name'],
+                    'LayerVersion': int(layer_info['version'])
+                } for layer_info in function_configure['layers']]
+            except KeyError:
+                raise ValueError('<function_configure> value invalid')
+        
+        if 'dead_letter' in function_configure:
+            try:
+                action_parameters['DeadLetterConfig'] = {
+                    'Type': function_configure['dead_letter']['type'],
+                    'Name': function_configure['dead_letter']['name']
+                }
+            except KeyError:
+                raise ValueError('<function_configure> value invalid')
 
         if function_description:
             if not isinstance(function_description, str):
@@ -1737,9 +1774,6 @@ class AbstractClient(client.BaseClient):
         Returns:
             Returns a dictionary instance containing Cloud Function information.
 
-        Yields:
-            Generates a dictionary object containing Cloud Function information.
-
         Raises:
             ValueError: Parameter values are not as expected.
             ActionError: The related operation corresponding to
@@ -1776,45 +1810,63 @@ class AbstractClient(client.BaseClient):
             action_version = '2018-04-16'
         )
 
-        return {
-            'info': {
-                'namespace_name': action_result['Namespace'],
-                'status': action_result['Status'],
-                'type': action_result['Type'],
-                'id': action_result['FunctionId'],
-                'name': action_result['FunctionName'],
-                'description': action_result['Description'],
-                'runtime': action_result['Runtime'],
-                'tags': {name: action_result['Tags'][name]
-                    for name in action_result['Tags']},
-                'last_modified_time': action_result['ModTime'],
-                'create_time': action_result['AddTime']
-            },
-            'configure': {
-                'handler': action_result['Handler'],
-                'memory_size': action_result['MemorySize'],
-                'time_out': action_result['Timeout'],
-                'vpc_configure': {
-                    'vpc_id': action_result['VpcConfig']['VpcId'],
-                    'subnet_id': action_result['VpcConfig']['SubnetId']
+        try:
+            return {
+                'info': {
+                    'namespace_name': action_result['Namespace'],
+                    'status': action_result['Status'],
+                    'type': action_result['Type'],
+                    'id': action_result['FunctionId'],
+                    'name': action_result['FunctionName'],
+                    'description': action_result['Description'],
+                    'runtime': action_result['Runtime'],
+                    'tags': {name: action_result['Tags'][name]
+                        for name in action_result['Tags']},
+                    'last_modified_time': action_result['ModTime'],
+                    'create_time': action_result['AddTime']
                 },
-                'role_id': action_result['Role'],
-                'log_configure': {
-                    'logset_id': action_result['ClsLogsetId'],
-                    'topic_id': action_result['ClsTopicId'],
-                },
-                'environments': {variable_info['Key']: variable_info['Value']
-                    for variable_info in action_result['Environment']['Variables']},
-                'eip_configure': {
-                    'enabled': action_result['EipConfig']['EipFixed'],
-                    'addresses': [address for address in action_result['EipConfig']['Eips']]
-                },
-                'access_configure': {
-                    'hostname': action_result['AccessInfo']['Host'],
-                    'ip_address': action_result['AccessInfo']['Vip']
+                'configure': {
+                    'handler': action_result['Handler'],
+                    'memory_size': action_result['MemorySize'],
+                    'time_out': action_result['Timeout'],
+                    'vpc_configure': {
+                        'vpc_id': action_result['VpcConfig']['VpcId'],
+                        'subnet_id': action_result['VpcConfig']['SubnetId']
+                    },
+                    'role_id': action_result['Role'],
+                    'log_configure': {
+                        'logset_id': action_result['ClsLogsetId'],
+                        'topic_id': action_result['ClsTopicId'],
+                    },
+                    'environments': {variable_info['Key']: variable_info['Value']
+                        for variable_info in action_result['Environment']['Variables']},
+                    'eip_configure': {
+                        'enabled': action_result['EipConfig']['EipFixed'],
+                        'addresses': [address for address in action_result['EipConfig']['Eips']]
+                    },
+                    'access_configure': {
+                        'hostname': action_result['AccessInfo']['Host'],
+                        'ip_address': action_result['AccessInfo']['Vip']
+                    },
+                    'layers': [
+                        {
+                            'name': layer_info['LayerName'],
+                            'description': layer_info['Description'],
+                            'version': layer_info['LayerVersion'],
+                            'runtimes': layer_info['CompatibleRuntimes'],
+                            'license': layer_info['LicenseInfo'],
+                            'create_time': layer_info['AddTime'],
+                            'status': layer_info['Status']
+                        } for layer_info in action_result['Layers']
+                    ],
+                    'dead_letter': {
+                        'type': action_result['DeadLetterConfig']['Type'],
+                        'name': action_result['DeadLetterConfig']['Name']
+                    }
                 }
             }
-        }
+        except KeyError as error:
+            raise errors.errors.ActionResultError('missing field: ' + str(error))
 
     def get_function_info(self,
         region_id: str,
