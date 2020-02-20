@@ -44,6 +44,9 @@ from tencent.cloud.serverless.functions import helper
 
 from tencent.cloud.serverless.functions.client import FunctionCode
 from tencent.cloud.serverless.functions.client import FunctionCodeSource
+from tencent.cloud.serverless.functions.client import LayerContent
+from tencent.cloud.serverless.functions.client import LayerContentSource
+from tencent.cloud.serverless.functions.client import LayerStatus
 from tencent.cloud.serverless.functions.client import FunctionTrigger
 from tencent.cloud.serverless.functions.client import FunctionTriggerKind
 from tencent.cloud.serverless.functions.client import FunctionType

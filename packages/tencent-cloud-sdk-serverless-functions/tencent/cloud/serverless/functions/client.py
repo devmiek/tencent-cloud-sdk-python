@@ -218,6 +218,61 @@ class FunctionCode:
         '''
 
         return self.__code_context
+    
+    def generate_code_parameters(self) -> dict:
+        '''
+        Generate compliant parameter structures for the Tencent Cloud API.
+
+        Raises:
+            ValueError: Unsupported source
+        
+        Returns:
+            Returns a dictionary instance containing Tencent Cloud API parameters.
+        '''
+
+        if self.__code_source == FunctionCodeSource.LocalZipFile:
+            return {
+                'Code': {
+                    'ZipFile': helper.local_file_to_base64(
+                        self.__code_context['local_file_path'])
+                },
+                'CodeSource': 'ZipFile'
+            }
+        elif self.__code_source == FunctionCodeSource.ObjectStorageBucket:
+            return {
+                'Code': {
+                    'CosBucketRegion': self.__code_context['region_id'],
+                    'CosBucketName': self.__code_context['bucket_name'],
+                    'CosObjectName': self.__code_context['object_name']
+                },
+                'CodeSource': 'Cos'
+            }
+        elif self.__code_source == FunctionCodeSource.GitRepository:
+            code_parameters: dict = {
+                'Code': {
+                    'GitUrl': self.__code_context['git_url']
+                },
+                'CodeSource': 'Git'
+            }
+
+            if self.__code_context['git_branch_name']:
+                code_parameters['Code']['GitBranch'] = self.__code_context['git_branch_name']
+            
+            if self.__code_context['git_directory_name']:
+                code_parameters['Code']['GitDirectory'] = self.__code_context['git_directory_name']
+            
+            if self.__code_context['git_commit_id']:
+                code_parameters['Code']['GitCommitId'] = self.__code_context['git_commit_id']
+            
+            if self.__code_context['git_username']:
+                code_parameters['Code']['GitUserName'] = self.__code_context['git_username']
+
+            if self.__code_context['git_password']:
+                code_parameters['Code']['GitPassword'] = self.__code_context['git_password']
+
+            return code_parameters
+        else:
+            raise ValueError('unsupported source')
 
     def use_object_storage_bucket(self,
         region_id: str,
@@ -340,6 +395,25 @@ class FunctionCode:
         }
 
         return self
+
+class LayerContentSource(FunctionCodeSource):
+    '''
+    Layer data source enumerator.
+    '''
+
+class LayerContent(FunctionCode):
+    '''
+    Represents the type of layer data.
+    '''
+
+class LayerStatus:
+    '''
+    Layer status enumerator.
+    '''
+
+    Creating: str = 'publishing'
+    Available: str = 'available'
+    Unavailable: str = 'unavailable'
 
 class FunctionType:
     '''
@@ -629,47 +703,7 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['Type'] = function_type
 
-        function_code_source: int = function_code.get_code_source()
-        function_code_context: dict = function_code.get_code_context()
-
-        if function_code_source == FunctionCodeSource.LocalZipFile:
-            action_parameters['Code'] = {
-                'ZipFile': helper.local_file_to_base64(
-                    function_code_context['local_file_path'])
-            }
-
-            action_parameters['CodeSource'] = 'ZipFile'
-        elif function_code_source == FunctionCodeSource.ObjectStorageBucket:
-            action_parameters['Code'] = {
-                'CosBucketRegion': function_code_context['region_id'],
-                'CosBucketName': function_code_context['bucket_name'],
-                'CosObjectName': function_code_context['object_name']
-            }
-
-            action_parameters['CodeSource'] = 'Cos'
-        elif function_code_source == FunctionCodeSource.GitRepository:
-            action_parameters['Code'] = {
-                'GitUrl': function_code_context['git_url']
-            }
-
-            if function_code_context['git_branch_name']:
-                action_parameters['Code']['GitBranch'] = function_code_context['git_branch_name']
-            
-            if function_code_context['git_directory_name']:
-                action_parameters['Code']['GitDirectory'] = function_code_context['git_directory_name']
-            
-            if function_code_context['git_commit_id']:
-                action_parameters['Code']['GitCommitId'] = function_code_context['git_commit_id']
-            
-            if function_code_context['git_username']:
-                action_parameters['Code']['GitUserName'] = function_code_context['git_username']
-
-            if function_code_context['git_password']:
-                action_parameters['Code']['GitPassword'] = function_code_context['git_password']
-
-            action_parameters['CodeSource'] = 'Git'
-        else:
-            raise ValueError('<function_code> value invalid')
+        action_parameters.update(function_code.generate_code_parameters())
 
         await self.request_action_async(
             region_id = region_id,
@@ -2433,3 +2467,432 @@ class AbstractClient(client.BaseClient):
 
         self.get_event_loop().run_until_complete(self.download_function_code_async(
             region_id, namespace_name, function_name, function_version, download_file_name))
+
+    async def create_layer_async(self,
+        region_id: str,
+        layer_name: str,
+        layer_description: str,
+        layer_content: LayerContent,
+        layer_runtimes: list,
+        layer_license: str = None
+    ) -> int:
+        '''
+        Create a new layer or a new version of an already created layer.
+
+        Args:
+            region_id: Data center unique identifier.
+            layer_name: Layer unique name.
+            layer_description: Layer description body.
+            layer_content: A LayerContent instance representing the layer data.
+            layer_runtimes: Layer compatible serverless cloud function runtime name.
+            layer_license: Layer license information.
+        
+        Returns:
+            Returns the version number of the newly created layer or layer version.
+
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        if not region_id or not isinstance(region_id, str):
+            raise ValueError('<region_id> value invalid')
+
+        if not layer_name or not isinstance(layer_name, str):
+            raise ValueError('<layer_name> value invalid')
+
+        if not layer_description or not isinstance(layer_description, str):
+            raise ValueError('<layer_description> value invalid')
+
+        if not layer_content or not isinstance(layer_content, LayerContent):
+            raise ValueError('<layer_content> value invalid')
+
+        if not layer_runtimes or not isinstance(layer_runtimes, list):
+            raise ValueError('<layer_runtimes> value invalid')
+
+        action_parameters: dict = {
+            'LayerName': layer_name,
+            'Description': layer_description,
+            'CompatibleRuntimes': layer_runtimes,
+            'Content': layer_content.generate_code_parameters()['Code']
+        }
+
+        if layer_license:
+            if not isinstance(layer_license, str):
+                raise ValueError('<layer_license> value invalid')
+            
+            action_parameters['LicenseInfo'] = layer_license
+
+        action_result: dict = await self.request_action_async(
+            region_id = region_id,
+            product_id = self.__product_id,
+            action_id = 'PublishLayerVersion',
+            action_parameters = action_parameters,
+            action_version = '2018-04-16'
+        )
+
+        try:
+            return int(action_result['LayerVersion'])
+        except KeyError as error:
+            raise errors.errors.ActionResultError('missing field: ' + str(error))
+
+    def create_layer(self,
+        region_id: str,
+        layer_name: str,
+        layer_description: str,
+        layer_content: LayerContent,
+        layer_runtimes: list,
+        layer_license: str = None
+    ) -> int:
+        '''
+        Create a new layer or a new version of an already created layer.
+
+        Args:
+            region_id: Data center unique identifier.
+            layer_name: Layer unique name.
+            layer_description: Layer description body.
+            layer_content: A LayerContent instance representing the layer data.
+            layer_runtimes: Layer compatible serverless cloud function runtime name.
+            layer_license: Layer license information.
+        
+        Returns:
+            Returns the version number of the newly created layer or layer version.
+
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        return self.get_event_loop().run_until_complete(self.create_layer_async(
+            region_id, layer_name, layer_description, layer_content,
+            layer_runtimes, layer_license
+        ))
+
+    async def delete_layer_async(self,
+        region_id: str,
+        layer_name: str,
+        layer_version: int
+    ):
+        '''
+        Deletes a specified version of a layer that has been created.
+
+        Args:
+            region_id: Data center unique identifier.
+            layer_name: Layer unique name.
+            layer_version: Layer version number.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        if not region_id or not isinstance(region_id, str):
+            raise ValueError('<region_id> value invalid')
+
+        if not layer_name or not isinstance(layer_name, str):
+            raise ValueError('<layer_name> value invalid')
+
+        if not layer_version or not isinstance(layer_version, int):
+            raise ValueError('<layer_version> value invalid')
+
+        await self.request_action_async(
+            region_id = region_id,
+            product_id = self.__product_id,
+            action_id = 'DeleteLayerVersion',
+            action_parameters = {
+                'LayerName': layer_name,
+                'LayerVersion': layer_version
+            },
+            action_version = '2018-04-16'
+        )
+
+    def delete_layer(self,
+        region_id: str,
+        layer_name: str,
+        layer_version: int
+    ):
+        '''
+        Deletes a specified version of a layer that has been created.
+
+        Args:
+            region_id: Data center unique identifier.
+            layer_name: Layer unique name.
+            layer_version: Layer version number.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        self.get_event_loop().run_until_complete(self.delete_layer_async(
+            region_id, layer_name, layer_version
+        ))
+
+    async def get_layer_info_async(self,
+        region_id: str,
+        layer_name: str,
+        layer_version: int
+    ) -> dict:
+        '''
+        Gets the specified version information of the specified layer.
+
+        Args:
+            region_id: Data center unique identifier.
+            layer_name: Layer unique name.
+            layer_version: Layer version number.
+
+        Returns:
+            Returns a dictionary instance containing layer information.
+
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        if not region_id or not isinstance(region_id, str):
+            raise ValueError('<region_id> value invalid')
+
+        if not layer_name or not isinstance(layer_name, str):
+            raise ValueError('<layer_name> value invalid')
+
+        if not layer_version or not isinstance(layer_version, int):
+            raise ValueError('<layer_version> value invalid')
+        
+        action_result: dict = await self.request_action_async(
+            region_id = region_id,
+            product_id = self.__product_id,
+            action_id = 'GetLayerVersion',
+            action_parameters = {
+                'LayerName': layer_name,
+                'LayerVersion': layer_version
+            },
+            action_version = '2018-04-16'
+        )
+
+        try:
+            return {
+                'name': action_result['LayerName'],
+                'description': action_result['Description'],
+                'version': action_result['LayerVersion'],
+                'runtimes': action_result['CompatibleRuntimes'],
+                'license': action_result['LicenseInfo'],
+                'create_time': action_result['AddTime'],
+                'content': {
+                    'url': action_result['Location'],
+                    'hash': action_result['CodeSha256']
+                },
+                'status': action_result['Status']
+            }
+        except KeyError as error:
+            raise errors.errors.ActionResultError('missing field: ' + str(error))
+
+    def get_layer_info(self,
+        region_id: str,
+        layer_name: str,
+        layer_version: int
+    ) -> dict:
+        '''
+        Gets the specified version information of the specified layer.
+
+        Args:
+            region_id: Data center unique identifier.
+            layer_name: Layer unique name.
+            layer_version: Layer version number.
+
+        Returns:
+            Returns a dictionary instance containing layer information.
+
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        return self.get_event_loop().run_until_complete(self.get_layer_info_async(
+            region_id, layer_name, layer_version
+        ))
+
+    async def list_layers_async(self,
+        region_id: str,
+        requirement_context: dict = None
+    ):
+        '''
+        Lists the latest version information for all layers.
+
+        Args:
+            region_id: Data center unique identifier.
+            requirement_context: A dictionary instance containing the
+                context of the filter description.
+        
+        Yields:
+            Generate a dictionary instance containing layer information.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        if not region_id or not isinstance(region_id, str):
+            raise ValueError('<region_id> value invalid')
+
+        action_parameters: dict = {
+            'Offset': 0,
+            'Limit': 20
+        }
+
+        if requirement_context:
+            if not isinstance(requirement_context, dict):
+                raise ValueError('<requirement_context> value invalid')
+
+            if 'runtimes' in requirement_context:
+                action_parameters['CompatibleRuntime'] = requirement_context['runtimes']
+            
+            if 'search' in requirement_context:
+                if 'layer_name' in requirement_context:
+                    action_parameters['SearchKey'] = requirement_context['search']['layer_name']
+
+        while True:
+            action_result: dict = await self.request_action_async(
+                region_id = region_id,
+                product_id = self.__product_id,
+                action_id = 'ListLayers',
+                action_parameters = action_parameters,
+                action_version = '2018-04-16'
+            )
+
+            try:
+                for layer_info in action_result['Layers']:
+                    yield {
+                        'name': layer_info['LayerName'],
+                        'description': layer_info['Description'],
+                        'version': layer_info['LayerVersion'],
+                        'runtimes': layer_info['CompatibleRuntimes'],
+                        'license': layer_info['LicenseInfo'],
+                        'create_time': layer_info['AddTime'],
+                        'status': layer_info['Status']
+                    }
+            except KeyError as error:
+                raise errors.errors.ActionResultError('missing field: ' + str(error))
+            
+            if len(action_result['Layers']) < action_parameters['Limit']:
+                break
+
+            action_parameters['Offset'] += action_parameters['Limit']
+
+    def list_layers(self,
+        region_id: str,
+        requirement_context: dict = None
+    ):
+        '''
+        Lists the latest version information for all layers.
+
+        Args:
+            region_id: Data center unique identifier.
+            requirement_context: A dictionary instance containing the
+                context of the filter description.
+        
+        Yields:
+            Generate a dictionary instance containing layer information.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        async_generator: object = self.list_layers_async(
+            region_id, requirement_context
+        )
+
+        while True:
+            layer_info: dict = self.get_event_loop().run_until_complete(
+                helper.generator_proxy_async(async_generator))
+            
+            if not layer_info:
+                break
+
+            yield layer_info
+
+    async def list_layer_versions_async(self,
+        region_id: str,
+        layer_name: str,
+        requirement_context: dict = None
+    ):
+        '''
+        List all version information for a given layer.
+
+        Args:
+            region_id: Data center unique identifier.
+            layer_name: Layer unique name.
+            requirement_context: A dictionary instance containing the
+                context of the filter description.
+        
+        Yields:
+            Generate a dictionary instance containing layer information.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        if not region_id or not isinstance(region_id, str):
+            raise ValueError('<region_id> value invalid')
+        
+        if not layer_name or not isinstance(layer_name, str):
+            raise ValueError('<layer_name> value invalid')
+
+        action_parameters: dict = {
+            'LayerName': layer_name
+        }
+
+        if requirement_context:
+            if not isinstance(requirement_context, dict):
+                raise ValueError('<requirement_context> value invalid')
+
+            if 'runtimes' in requirement_context:
+                action_parameters['CompatibleRuntime'] = requirement_context['runtimes']
+        
+        action_results: dict = await self.request_action_async(
+            region_id = region_id,
+            product_id = self.__product_id,
+            action_id = 'ListLayerVersions',
+            action_parameters = action_parameters,
+            action_version = '2018-04-16'
+        )
+
+        try:
+            for layer_info in action_results['LayerVersions']:
+                yield {
+                    'name': layer_info['LayerName'],
+                    'description': layer_info['Description'],
+                    'version': layer_info['LayerVersion'],
+                    'runtimes': layer_info['CompatibleRuntimes'],
+                    'license': layer_info['LicenseInfo'],
+                    'create_time': layer_info['AddTime'],
+                    'status': layer_info['Status']
+                }
+        except KeyError as error:
+            raise errors.errors.ActionResultError('missing field: ' + str(error))
+
+    def list_layer_versions(self,
+        region_id: str,
+        layer_name: str,
+        requirement_context: dict = None
+    ):
+        '''
+        List all version information for a given layer.
+
+        Args:
+            region_id: Data center unique identifier.
+            layer_name: Layer unique name.
+            requirement_context: A dictionary instance containing the
+                context of the filter description.
+        
+        Yields:
+            Generate a dictionary instance containing layer information.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        async_generator: object = self.list_layer_versions_async(
+            region_id, layer_name, requirement_context
+        )
+
+        while True:
+            layer_info: dict = self.get_event_loop().run_until_complete(
+                helper.generator_proxy_async(async_generator))
+            
+            if not layer_info:
+                break
+
+            yield layer_info
