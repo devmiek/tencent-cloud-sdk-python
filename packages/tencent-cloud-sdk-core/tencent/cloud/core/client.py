@@ -65,6 +65,7 @@ Example2:
 
 import json
 import time
+import random
 import asyncio
 
 try:
@@ -135,6 +136,21 @@ class BaseClient:
         )
 
         self.__last_response_metadata: dict = None
+
+        self.error_manager: errors.ErrorManager = errors.ErrorManager(
+            error_handlers = [
+                self._error_handler_callback
+            ]
+        )
+
+        self.__action_retry_error_ids: list = [
+            'AuthFailure.SignatureExpire',
+            'InternalError',
+            'LimitExceeded',
+            'RequestLimitExceeded',
+            'ResourceInsufficient'
+        ]
+
         self.__initialized = True
 
     def __del__(self):
@@ -151,6 +167,23 @@ class BaseClient:
             self.get_event_loop().run_until_complete(self.__request_client.close())
         else:
             self.get_event_loop().create_task(self.__request_client.close())
+
+    def _error_handler_callback(self,
+        error_manager: errors.ErrorManager,
+        error_source: object,
+        error_instance: errors.ClientError,
+        error_retry_count: int
+    ) -> int:
+        if isinstance(error_instance, errors.RequestError):
+            return errors.ErrorHandlerResult.Backoff
+        elif isinstance(error_instance, errors.ResponseError):
+            if error_instance.status_code >= 500:
+                return errors.ErrorHandlerResult.Backoff
+        elif isinstance(error_instance, errors.ActionError):
+            if error_instance.error_id in self.__action_retry_error_ids:
+                return errors.ErrorHandlerResult.Backoff
+
+        return errors.ErrorHandlerResult.Ignore
 
     def get_event_loop(self) -> asyncio.AbstractEventLoop:
         '''
@@ -313,8 +346,7 @@ class BaseClient:
         product_id: str,
         action_id: str,
         action_parameters: dict,
-        action_version: str,
-        number_of_retries: int = 3
+        action_version: str
     ) -> dict:
         '''
         Make an HTTP request to the Cloud API.
@@ -328,7 +360,6 @@ class BaseClient:
             action_id: Cloud API unique identifier.
             action_parameters: Cloud API request parameters.
             action_version: Cloud API version name
-            number_of_retries: Number of retries required
         
         Returns:
             Returns a dictionary object containing Cloud API responses.
@@ -340,22 +371,31 @@ class BaseClient:
             ActionError: Cloud API's HTTP request succeeded, but the operation failed.
         '''
 
-        if number_of_retries != None and not isinstance(number_of_retries, int):
-            raise ValueError('<number_of_retries> value invalid')
-        
-        if number_of_retries > 0:
-            for retry_count in range(number_of_retries):
-                try:
-                    return await self.try_request_action_async(region_id, product_id,
-                        action_id, action_parameters, action_version)
-                except errors.RequestError:
-                    if retry_count == number_of_retries:
-                        raise
-                    
-                    await asyncio.sleep(retry_count * number_of_retries)
-        else:
-            return await self.try_request_action_async(region_id, product_id,
-                action_id, action_parameters, action_version)
+        error_retry_count: int = 0
+
+        while True:
+            try:
+                return await self.try_request_action_async(region_id, product_id,
+                    action_id, action_parameters, action_version)
+            except (errors.RequestError, errors.ResponseError, errors.ActionError) as error:
+                if error_retry_count == self.error_manager.max_number_of_retries:
+                    raise
+
+                error_handler_result: int = self.error_manager.handler(self, error,
+                    error_retry_count)
+
+                if error_handler_result == errors.ErrorHandlerResult.Backoff:
+                    backoff_interval: float = (2 ** error_retry_count) + (
+                        random.randint(1, 1000) / 1000)
+
+                    await asyncio.sleep(min(backoff_interval,
+                        self.error_manager.max_backoff_interval))
+                elif error_handler_result == errors.ErrorHandlerResult.Retry:
+                    continue
+                elif error_handler_result == errors.ErrorHandlerResult.Throw:
+                    raise
+            finally:
+                error_retry_count += 1
 
     async def download_resource_async(self,
         resource_url: str,
