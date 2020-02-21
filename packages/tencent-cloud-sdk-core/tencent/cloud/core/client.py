@@ -105,7 +105,12 @@ class BaseClient:
 
             self.__credentials_context: credentials.Credentials = credentials_context
         else:
-            self.__credentials_context: credentials.Credentials = credentials.EnvironmentalCredentials()
+            try:
+                self.__credentials_context: credentials.Credentials = (
+                    credentials.FileCredentials('secret.json'))
+            except FileNotFoundError:
+                self.__credentials_context: credentials.Credentials = (
+                    credentials.EnvironmentalCredentials())
 
         if request_proxies_context:
             if not isinstance(request_proxies_context, proxies.Proxies):
@@ -388,9 +393,6 @@ class BaseClient:
 class UniversalClient(BaseClient):
     '''
     Represents a universal client type that applies to all products.
-
-    Note that the abstract client for any product should inherit
-        BaseClient, not this type.
 
     Args:
         product_id: Unique identifier of the product
