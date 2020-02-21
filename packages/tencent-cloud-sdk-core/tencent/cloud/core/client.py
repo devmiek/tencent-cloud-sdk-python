@@ -340,15 +340,22 @@ class BaseClient:
             ActionError: Cloud API's HTTP request succeeded, but the operation failed.
         '''
 
-        for retry_count in range(number_of_retries):
-            try:
-                return await self.try_request_action_async(region_id, product_id,
-                    action_id, action_parameters, action_version)
-            except errors.RequestError:
-                if retry_count == number_of_retries:
-                    raise
-                
-                await asyncio.sleep(retry_count * number_of_retries)
+        if number_of_retries != None and not isinstance(number_of_retries, int):
+            raise ValueError('<number_of_retries> value invalid')
+        
+        if number_of_retries > 0:
+            for retry_count in range(number_of_retries):
+                try:
+                    return await self.try_request_action_async(region_id, product_id,
+                        action_id, action_parameters, action_version)
+                except errors.RequestError:
+                    if retry_count == number_of_retries:
+                        raise
+                    
+                    await asyncio.sleep(retry_count * number_of_retries)
+        else:
+            return await self.try_request_action_async(region_id, product_id,
+                action_id, action_parameters, action_version)
 
     async def download_resource_async(self,
         resource_url: str,
