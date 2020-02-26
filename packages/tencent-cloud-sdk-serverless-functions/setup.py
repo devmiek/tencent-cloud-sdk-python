@@ -56,6 +56,6 @@ setuptools.setup(
         'Development Status :: 4 - Beta'
     ],
     install_requires = [
-        'tencent-cloud-sdk-core>=0.1.1'
+        'tencent-cloud-sdk-core>=0.1.2'
     ]
 )
