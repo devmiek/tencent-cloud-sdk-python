@@ -60,6 +60,36 @@ class Credentials:
         secret_id: str,
         secret_key: str
     ):
+        self.set_secret_info(secret_id, secret_key)
+
+    def get_secret_info(self) -> dict:
+        '''
+        Get Secret information for current access credentials.
+
+        Returns:
+            Returns a dictionary instance containing Secret information.
+        '''
+
+        return {
+            'secret_id': self.__secret_id,
+            'secret_key': self.__secret_key
+        }
+
+    def set_secret_info(self,
+        secret_id: str,
+        secret_key: str
+    ):
+        '''
+        Set secret information for access credentials.
+
+        Args:
+            secret_id: ID of the account access key
+            secret_key: Key for account access key
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
         if not secret_id or not isinstance(secret_id, str):
             raise ValueError('<secret_id> value invalid')
 

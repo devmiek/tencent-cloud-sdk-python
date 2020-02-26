@@ -623,6 +623,58 @@ class Client(client.AbstractClient):
 # Built-in client instances for specific operating environments
 __builtin_managed_client: Client = None
 
+def get_builtin_client() -> Client:
+    '''
+    Get the built-in managed client instance.
+
+    Note that if the built-in managed client instance does not exist,
+        create a client instance and set it as the built-in managed client.
+
+    Returns:
+        Returns the client instance.
+    '''
+    
+    global __builtin_managed_client
+
+    if not __builtin_managed_client:
+        __builtin_managed_client = Client(None)
+
+    return __builtin_managed_client
+
+def has_builtin_client() -> bool:
+    '''
+    Whether the built-in managed client instance has been created
+
+    Returns:
+        Returns true if the built-in managed client has been created,
+            otherwise returns false.
+    '''
+
+    return __builtin_managed_client != None
+
+def set_builtin_client(
+    function_client: Client
+):
+    '''
+    Set up an created client instance as the new built-in
+        managed client.
+
+    Note that if the built-in managed client is created,
+        it will be overwritten.
+    
+    Args:
+        function_client: Serverless cloud function product client instance.
+    
+    Raises:
+        ValueError: Parameter values are not as expected.
+    '''
+
+    if not function_client or not isinstance(function_client, Client):
+        raise ValueError('<function_client> value invalid')
+
+    global __builtin_managed_client
+    __builtin_managed_client = function_client
+
 def invoke(
     function_name: str,
     function_event: dict = None,

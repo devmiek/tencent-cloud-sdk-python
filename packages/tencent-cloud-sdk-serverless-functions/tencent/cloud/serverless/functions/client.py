@@ -28,6 +28,7 @@ Implements the client type of Serverless Cloud Function.
 
 import os
 import json
+import time
 
 from tencent.cloud.core import client
 from tencent.cloud.core import proxies
@@ -2948,3 +2949,68 @@ class AbstractClient(client.BaseClient):
                 break
 
             yield layer_info
+
+    async def submit_monitor_indicator_async(self,
+        region_id: str,
+        namespace_name: str,
+        function_name: str,
+        indicator_name: str,
+        indicator_value: int,
+        function_version: str = None
+    ):
+        if not region_id or not isinstance(region_id, str):
+            raise ValueError('<region_id> value invalid')
+
+        if not namespace_name or not isinstance(namespace_name, str):
+            raise ValueError('<namespace_name> value invalid')
+
+        if not function_name or not isinstance(function_name, str):
+            raise ValueError('<function_name> value invalid')
+
+        if not indicator_name or not isinstance(indicator_name, str):
+            raise ValueError('<indicator_name> value invalid')
+
+        if indicator_value == None or not isinstance(indicator_value, int):
+            raise ValueError('<indicator_value> value invalid')
+
+        action_parameters: dict = {
+            'AnnounceInstance': '{NAMESPACE_NAME}::{FUNCTION_NAME}'.format(
+                NAMESPACE_NAME = namespace_name,
+                FUNCTION_NAME = function_name
+            ),
+            'AnnounceTimestamp': int(time.time()),
+            'Metrics': [
+                {
+                    'MetricName': indicator_name,
+                    'Value': indicator_value
+                }
+            ]
+        }
+
+        if function_version:
+            if not isinstance(function_version, str):
+                raise ValueError('<function_version> value invalid')
+            
+            action_parameters['AnnounceInstance'] += ('::' + function_version)
+
+        await self.request_action_async(
+            region_id = region_id,
+            product_id = 'monitor',
+            action_id = 'PutMonitorData',
+            action_parameters = action_parameters,
+            action_version = '2018-07-24',
+            action_endpoint = 'monitor.tencentcloudapi.com'
+        )
+
+    def submit_monitor_indicator(self,
+        region_id: str,
+        namespace_name: str,
+        function_name: str,
+        indicator_name: str,
+        indicator_value: int,
+        function_version: str = None
+    ):
+        self.get_event_loop().run_until_complete(self.submit_monitor_indicator_async(
+            region_id, namespace_name, function_name, indicator_name,
+            indicator_value, function_version
+        ))
