@@ -2958,6 +2958,25 @@ class AbstractClient(client.BaseClient):
         indicator_value: int,
         function_version: str = None
     ):
+        '''
+        Report custom monitoring metric data for a given serverless
+            cloud function to Tencent Cloud cloud monitoring products.
+        
+        Args:
+            region_id: The unique identifier of the data center where the
+                serverless cloud function is located.
+            namespace_name: The unique name of the namespace where the
+                serverless cloud function is located.
+            function_name: The unique name of the serverless cloud function.
+            indicator_name: The unique name of the reported custom indicator.
+            indicator_value: The data value corresponding to the reported
+                custom indicator.
+            function_version: Serverless cloud function version unique name.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
         if not region_id or not isinstance(region_id, str):
             raise ValueError('<region_id> value invalid')
 
@@ -3010,6 +3029,25 @@ class AbstractClient(client.BaseClient):
         indicator_value: int,
         function_version: str = None
     ):
+        '''
+        Report custom monitoring metric data for a given serverless
+            cloud function to Tencent Cloud cloud monitoring products.
+        
+        Args:
+            region_id: The unique identifier of the data center where the
+                serverless cloud function is located.
+            namespace_name: The unique name of the namespace where the
+                serverless cloud function is located.
+            function_name: The unique name of the serverless cloud function.
+            indicator_name: The unique name of the reported custom indicator.
+            indicator_value: The data value corresponding to the reported
+                custom indicator.
+            function_version: Serverless cloud function version unique name.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
         self.get_event_loop().run_until_complete(self.submit_monitor_indicator_async(
             region_id, namespace_name, function_name, indicator_name,
             indicator_value, function_version
