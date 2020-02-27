@@ -304,6 +304,7 @@ class ErrorManager:
         
         Raises:
             ValueError: Parameter values are not as expected.
+            ExistedError: The given error handler callback function already exists.
         '''
 
         if not error_handler and callable(error_handler):
