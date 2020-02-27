@@ -29,9 +29,13 @@ https://github.com/nobody-night/tencent-cloud-sdk-python
 
 import setuptools
 
+def read_readme_content() -> str:
+    with open('README.md', encoding = 'utf-8') as readme_file_handle:
+        return readme_file_handle.read()
+
 setuptools.setup(
     name = 'tencent-cloud-sdk',
-    version = '0.1.2',
+    version = '0.1.3',
     keywords = 'tencent-cloud sdk-python',
     license = 'MIT License',
     author = 'Tencent Cloud',
@@ -40,6 +44,8 @@ setuptools.setup(
         'Tencent Cloud SDK for Python, which provides an '
         'easier-to-use abstract client and advanced features.'
     ),
+    long_description = read_readme_content(),
+    long_description_content_type = 'text/markdown',
     url = 'https://github.com/nobody-night/tencent-cloud-sdk-python',
     python_requires = '>=3.6',
     zip_safe = False,
@@ -51,8 +57,8 @@ setuptools.setup(
         'Development Status :: 4 - Beta'
     ),
     install_requires = [
-        'tencent-cloud-sdk-auth>=0.1.1',
-        'tencent-cloud-sdk-core>=0.1.1',
-        'tencent-cloud-sdk-serverless-functions>=0.1.1'
+        'tencent-cloud-sdk-auth>=0.1.2',
+        'tencent-cloud-sdk-core>=0.1.2',
+        'tencent-cloud-sdk-serverless-functions>=0.1.2'
     ]
 )
