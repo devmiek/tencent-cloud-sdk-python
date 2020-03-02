@@ -29,25 +29,6 @@ Example:
 
     from tencent.cloud.core import client
 
-    base_client: client.BaseClient = client.BaseClient(
-        request_endpoint = 'scf.tencentcloudapi.com'
-    )
-
-    base_client.request_action(
-        region_id = 'ap-shanghai',
-        product_id = 'scf',
-        action_id = 'Invoke',
-        action_parameters = {
-            'Namespace': 'default',
-            'FunctionName': 'get_user_name'
-        },
-        action_version = '2018-04-16'
-    )
-
-Example2:
-
-    from tencent.cloud.core import client
-
     function_client: client.UniversalClient = client.UniversalClient(
         product_id = 'scf'
     )
@@ -86,45 +67,45 @@ class BaseClient:
         underlying client will provide direct access to the Cloud API.
 
     Args:
-        credentials_context: Authentication context type instance
-        request_endpoint: Cloud API's HTTP request endpoint host name
+        access_credentials: Authentication context type instance
+        access_endpoint: Cloud API's HTTP request endpoint host name
     
     Raises:
         ValueError: Parameter values are not as expected.
     '''
 
     def __init__(self,
-        credentials_context: credentials.Credentials,
-        request_proxies_context: proxies.Proxies,
-        request_endpoint: str
+        access_credentials: credentials.Credentials,
+        access_proxies: proxies.Proxies,
+        access_endpoint: str
     ):
         self.__initialized: bool = False
 
-        if credentials_context:
-            if not isinstance(credentials_context, credentials.Credentials):
-                raise ValueError('<credentials_context> value invalid')
+        if access_credentials:
+            if not isinstance(access_credentials, credentials.Credentials):
+                raise ValueError('<access_credentials> value invalid')
 
-            self.__credentials_context: credentials.Credentials = credentials_context
+            self.__access_credentials: credentials.Credentials = access_credentials
         else:
             try:
-                self.__credentials_context: credentials.Credentials = (
+                self.__access_credentials: credentials.Credentials = (
                     credentials.FileCredentials('secret.json'))
             except FileNotFoundError:
-                self.__credentials_context: credentials.Credentials = (
+                self.__access_credentials: credentials.Credentials = (
                     credentials.EnvironmentalCredentials())
 
-        if request_proxies_context:
-            if not isinstance(request_proxies_context, proxies.Proxies):
-                raise ValueError('<request_proxies_context> value invalid')
+        if access_proxies:
+            if not isinstance(access_proxies, proxies.Proxies):
+                raise ValueError('<access_proxies> value invalid')
 
-            self.__request_proxies_context = request_proxies_context
+            self.__access_proxies = access_proxies
         else:
-            self.__request_proxies_context = None
+            self.__access_proxies = None
 
-        if not request_endpoint or not isinstance(request_endpoint, str):
-            raise ValueError('<request_endpoint> value invalid')
+        if not access_endpoint or not isinstance(access_endpoint, str):
+            raise ValueError('<access_endpoint> value invalid')
 
-        self.__request_endpoint: str = request_endpoint
+        self.__access_endpoint: str = access_endpoint
         self.__event_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         
         self.__request_client: aiohttp.ClientSession = aiohttp.ClientSession(
@@ -162,13 +143,13 @@ class BaseClient:
         # The event loop instance running in the hyperthreaded context
         # of the underlying client should not be closed.
 
-        if self.get_event_loop().is_closed():
+        if self._get_event_loop().is_closed():
             raise RuntimeError('destroy the client before the event loop closes')
 
-        if not self.get_event_loop().is_running():
-            self.get_event_loop().run_until_complete(self.__request_client.close())
+        if not self._get_event_loop().is_running():
+            self._get_event_loop().run_until_complete(self.__request_client.close())
         else:
-            self.get_event_loop().create_task(self.__request_client.close())
+            self._get_event_loop().create_task(self.__request_client.close())
 
     @property
     def error_manager(self) -> errors.ErrorManager:
@@ -184,7 +165,7 @@ class BaseClient:
         Binding access credentials instance.
         '''
 
-        return self.__credentials_context
+        return self.__access_credentials
 
     @property
     def enable_builtin_error_handler(self) -> bool:
@@ -230,7 +211,7 @@ class BaseClient:
 
         return errors.ErrorHandlerResult.Ignore
 
-    def get_event_loop(self) -> asyncio.AbstractEventLoop:
+    def _get_event_loop(self) -> asyncio.AbstractEventLoop:
         '''
         Gets the event loop instance to which the current client belongs.
 
@@ -251,31 +232,34 @@ class BaseClient:
 
         return self.__last_response_metadata
 
-    def set_request_endpoint(self,
-        request_endpoint: str
+    def set_access_endpoint(self,
+        access_endpoint: str
     ):
         '''
-        Set a new Cloud API HTTP request endpoint host name.
+        Set the Tencent Cloud API endpoint host name.
+
+        Note that this will immediately override the default Tencent Cloud
+            API endpoint hostname for the current client instance.
 
         Args:
-            request_endpoint: HTTP request endpoint host name.
+            access_endpoint: Endpoint hostname.
         
         Raises:
             ValueError: Parameter values are not as expected.
         '''
 
-        if not request_endpoint or not isinstance(request_endpoint, str):
-            raise ValueError('<request_endpoint> value invalid')
+        if not access_endpoint or not isinstance(access_endpoint, str):
+            raise ValueError('<access_endpoint> value invalid')
 
-        self.__request_endpoint = request_endpoint
+        self.__access_endpoint = access_endpoint
 
-    async def try_request_action_async(self,
+    async def _try_request_action_async(self,
         region_id: str,
         product_id: str,
         action_id: str,
         action_parameters: dict,
         action_version: str,
-        action_endpoint: str = None
+        access_endpoint: str = None
     ) -> dict:
         '''
         Attempt to make an HTTP request to the Cloud API.
@@ -289,6 +273,7 @@ class BaseClient:
             action_id: Cloud API unique identifier.
             action_parameters: Cloud API request parameters.
             action_version: Cloud API version name
+            access_endpoint: Tencent Cloud API endpoint host name.
         
         Returns:
             Returns a dictionary object containing Cloud API responses.
@@ -315,13 +300,13 @@ class BaseClient:
         if not action_version or not isinstance(action_version, str):
             raise ValueError('<action_version> value invalid')
 
-        if action_endpoint and not isinstance(action_endpoint, str):
-            raise ValueError('<action_endpoint> value invalid')
+        if access_endpoint and not isinstance(access_endpoint, str):
+            raise ValueError('<access_endpoint> value invalid')
 
         signature_timestamp: int = int(time.time())
 
-        auth_content: str = self.__credentials_context.generate_and_signature(
-            request_hostname = self.__request_endpoint if not action_endpoint else action_endpoint,
+        auth_content: str = self.__access_credentials.generate_and_signature(
+            request_hostname = self.__access_endpoint if not access_endpoint else access_endpoint,
             request_method = 'POST',
             request_parameters = action_parameters,
             signature_product_id = product_id,
@@ -330,8 +315,8 @@ class BaseClient:
 
         try:
             response_context: aiohttp.ClientResponse = await self.__request_client.post(
-                url = 'https://{REQUEST_ENDPOINT}/'.format(
-                    REQUEST_ENDPOINT = self.__request_endpoint if not action_endpoint else action_endpoint
+                url = 'https://{access_endpoint}/'.format(
+                    access_endpoint = self.__access_endpoint if not access_endpoint else access_endpoint
                 ),
                 json = action_parameters if action_parameters else dict(),
                 headers = {
@@ -342,14 +327,14 @@ class BaseClient:
                     'Authorization': auth_content
                 },
                 proxy = '{PROXY_TYPE}://{PROXY_ENDPOINT}'.format(
-                    PROXY_TYPE = self.__request_proxies_context.proxy_type,
-                    PROXY_ENDPOINT = self.__request_proxies_context.proxy_endpoint
-                ) if self.__request_proxies_context else None,
+                    PROXY_TYPE = self.__access_proxies.proxy_type,
+                    PROXY_ENDPOINT = self.__access_proxies.proxy_endpoint
+                ) if self.__access_proxies else None,
                 proxy_auth = (aiohttp.BasicAuth(
-                    self.__request_proxies_context.proxy_auth['username'],
-                    self.__request_proxies_context.proxy_auth['password']
-                ) if self.__request_proxies_context and
-                    self.__request_proxies_context.proxy_auth else None)
+                    self.__access_proxies.proxy_auth['username'],
+                    self.__access_proxies.proxy_auth['password']
+                ) if self.__access_proxies and
+                    self.__access_proxies.proxy_auth else None)
             )
 
             response_context.raise_for_status()
@@ -390,13 +375,13 @@ class BaseClient:
 
         return response_result['Response']
 
-    async def request_action_async(self,
+    async def _request_action_async(self,
         region_id: str,
         product_id: str,
         action_id: str,
         action_parameters: dict,
         action_version: str,
-        action_endpoint: str = None
+        access_endpoint: str = None
     ) -> dict:
         '''
         Make an HTTP request to the Cloud API.
@@ -409,7 +394,8 @@ class BaseClient:
             product_id: Product unique identifier.
             action_id: Cloud API unique identifier.
             action_parameters: Cloud API request parameters.
-            action_version: Cloud API version name
+            action_version: Cloud API version name.
+            access_endpoint: Tencent Cloud API endpoint host name.
         
         Returns:
             Returns a dictionary object containing Cloud API responses.
@@ -425,8 +411,8 @@ class BaseClient:
 
         while True:
             try:
-                return await self.try_request_action_async(region_id, product_id,
-                    action_id, action_parameters, action_version, action_endpoint)
+                return await self._try_request_action_async(region_id, product_id,
+                    action_id, action_parameters, action_version, access_endpoint)
             except (errors.RequestError, errors.ResponseError, errors.ActionError) as error:
                 if error_retry_count == self.__error_manager.max_number_of_retries:
                     raise
@@ -447,7 +433,7 @@ class BaseClient:
             finally:
                 error_retry_count += 1
 
-    async def download_resource_async(self,
+    async def _download_resource_async(self,
         resource_url: str,
         local_file_name: str
     ):
@@ -493,7 +479,8 @@ class UniversalClient(BaseClient):
 
     Args:
         product_id: Unique identifier of the product.
-        credentials_context: Authentication context instance.
+        access_credentials: Access credentials configuration.
+        access_proiexs: Access proxy server configuration.
     
     Raises:
         ValueError: Parameter values are not as expected.
@@ -501,15 +488,15 @@ class UniversalClient(BaseClient):
     
     def __init__(self,
         product_id: str,
-        credentials_context: credentials.Credentials = None,
-        proiexs_context: proxies.Proxies = None
+        access_credentials: credentials.Credentials = None,
+        access_proiexs: proxies.Proxies = None
     ):
         if not product_id or not isinstance(product_id, str):
             raise ValueError('<product_id> value invalid')
         
         self.__product_id: str = product_id
 
-        super().__init__(credentials_context, proiexs_context,
+        super().__init__(access_credentials, access_proiexs,
             product_id + '.tencentcloudapi.com')
 
     async def action_async(self,
@@ -519,16 +506,18 @@ class UniversalClient(BaseClient):
         action_version: str
     ) -> dict:
         '''
-        Request a given Cloud API
+        Call the specified Tencent Cloud API of the Tencent Cloud
+            product bound to the current client and get the result.
 
         Args:
-            region_id: Region unique identifier.
-            action_id: Cloud API unique identifier.
-            action_parameters: Parameters passed to the Cloud API.
-            action_version: Cloud API version name.
+            region_id: Data center unique identifier.
+            action_id: Tencent Cloud API unique identifier.
+            action_parameters: Dictionary instance with Tencent Cloud API parameters.
+            action_version: Tencent Cloud API version name.
 
         Returns:
-            Returns a dictionary object containing Cloud API responses.
+            Returns a dictionary instance containing the results of a
+                Tencent Cloud API call.
         
         Raises:
             ValueError: Parameter values are not as expected.
@@ -537,7 +526,7 @@ class UniversalClient(BaseClient):
             ActionError: Cloud API's HTTP request succeeded, but the operation failed.
         '''
 
-        return await self.request_action_async(region_id, self.__product_id,
+        return await self._request_action_async(region_id, self.__product_id,
             action_id, action_parameters, action_version)
 
     def action(self,
@@ -547,16 +536,18 @@ class UniversalClient(BaseClient):
         action_version: str
     ) -> dict:
         '''
-        Request a given Cloud API
+        Call the specified Tencent Cloud API of the Tencent Cloud
+            product bound to the current client and get the result.
 
         Args:
-            region_id: Region unique identifier.
-            action_id: Cloud API unique identifier.
-            action_parameters: Parameters passed to the Cloud API.
-            action_version: Cloud API version name.
+            region_id: Data center unique identifier.
+            action_id: Tencent Cloud API unique identifier.
+            action_parameters: Dictionary instance with Tencent Cloud API parameters.
+            action_version: Tencent Cloud API version name.
 
         Returns:
-            Returns a dictionary object containing Cloud API responses.
+            Returns a dictionary instance containing the results of a
+                Tencent Cloud API call.
         
         Raises:
             ValueError: Parameter values are not as expected.
@@ -565,16 +556,16 @@ class UniversalClient(BaseClient):
             ActionError: Cloud API's HTTP request succeeded, but the operation failed.
         '''
 
-        return self.get_event_loop().run_until_complete(self.request_action_async(
+        return self._get_event_loop().run_until_complete(self._request_action_async(
             region_id, self.__product_id, action_id, action_parameters, action_version))
 
-    async def action_for_mixed_async(self,
+    async def action_for_product_async(self,
         product_id: str,
         region_id: str,
         action_id: str,
         action_parameters: dict,
         action_version: str,
-        action_endpoint: str = None
+        access_endpoint: str = None
     ) -> dict:
         '''
         Request a given Tencent Cloud API for a given Tencent Cloud product.
@@ -591,6 +582,7 @@ class UniversalClient(BaseClient):
             action_id: Cloud API unique identifier.
             action_parameters: Parameters passed to the Cloud API.
             action_version: Cloud API version name.
+            access_endpoint: Tencent Cloud API endpoint host name.
 
         Returns:
             Returns a dictionary object containing Cloud API responses.
@@ -602,19 +594,19 @@ class UniversalClient(BaseClient):
             ActionError: Cloud API's HTTP request succeeded, but the operation failed.
         '''
 
-        if not action_endpoint:
-            action_endpoint = product_id + '.tencentcloudapi.com'
+        if not access_endpoint:
+            access_endpoint = product_id + '.tencentcloudapi.com'
 
-        return await self.request_action_async(region_id, product_id, action_id,
-            action_parameters, action_version, action_endpoint)
+        return await self._request_action_async(region_id, product_id, action_id,
+            action_parameters, action_version, access_endpoint)
 
-    def action_for_mixed(self,
+    def action_for_product(self,
         product_id: str,
         region_id: str,
         action_id: str,
         action_parameters: dict,
         action_version: str,
-        action_endpoint: str = None
+        access_endpoint: str = None
     ) -> dict:
         '''
         Request a given Tencent Cloud API for a given Tencent Cloud product.
@@ -631,6 +623,7 @@ class UniversalClient(BaseClient):
             action_id: Cloud API unique identifier.
             action_parameters: Parameters passed to the Cloud API.
             action_version: Cloud API version name.
+            access_endpoint: Tencent Cloud API endpoint host name.
 
         Returns:
             Returns a dictionary object containing Cloud API responses.
@@ -642,9 +635,9 @@ class UniversalClient(BaseClient):
             ActionError: Cloud API's HTTP request succeeded, but the operation failed.
         '''
 
-        return self.get_event_loop().run_until_complete(self.request_action_async(
+        return self._get_event_loop().run_until_complete(self._request_action_async(
             region_id, product_id, action_id, action_parameters,
-            action_version, action_endpoint
+            action_version, access_endpoint
         ))
 
     def set_product_id(self,
@@ -664,9 +657,9 @@ class UniversalClient(BaseClient):
         if not product_id or not isinstance(product_id, str):
             raise ValueError('<product_id> value invalid')
 
-        self.set_request_endpoint(product_id + '.tencentcloudapi.com')
+        self.set_access_endpoint(product_id + '.tencentcloudapi.com')
         self.__product_id = product_id
-        
+
     def get_product_id(self) -> str:
         '''
         Get the product ID corresponding to the current client.

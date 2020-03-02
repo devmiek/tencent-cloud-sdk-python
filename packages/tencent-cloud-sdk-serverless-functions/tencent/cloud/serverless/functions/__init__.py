@@ -300,21 +300,21 @@ class Client(client.AbstractClient):
     Abstract client type representing Serverless Cloud Function products.
 
     Args:
-        credentials_context: Credential context instance.
-        proxies_context: Proxy server context instance.
+        access_credentials: Credential context instance.
+        access_proxies: Proxy server context instance.
     
     Raises:
         ValueError: Parameter values are not as expected.
     '''
 
     def __init__(self,
-        credentials_context: credentials.Credentials = None,
-        proxies_context: proxies.Proxies = None
+        access_credentials: credentials.Credentials = None,
+        access_proxies: proxies.Proxies = None
     ):
         self.__schedule_invoke_waited: bool = False
         self.__schedule_invoke_count: int = 0
 
-        super().__init__(credentials_context, proxies_context)
+        super().__init__(access_credentials, access_proxies)
 
     async def easy_invoke_async(self,
         region_id: str,
@@ -391,10 +391,10 @@ class Client(client.AbstractClient):
         '''
 
         if not function_async:
-            return self.get_event_loop().run_until_complete(self.easy_invoke_async(region_id,
+            return self._get_event_loop().run_until_complete(self.easy_invoke_async(region_id,
                 namespace_name, function_name, function_event, function_version, False))
         else:
-            return (self.get_event_loop().run_until_complete(self.invoke_async(region_id,
+            return (self._get_event_loop().run_until_complete(self.invoke_async(region_id,
                 namespace_name, function_name, function_event, function_version, True))['request_id'])
 
     async def select_function_async(self,
@@ -539,7 +539,7 @@ class Client(client.AbstractClient):
         if (self.__schedule_invoke_waited and
             self.__schedule_invoke_count == 0
         ):
-            self.get_event_loop().stop()
+            self._get_event_loop().stop()
 
     def schedule_invoke(self,
         region_id: str,
@@ -610,13 +610,13 @@ class Client(client.AbstractClient):
         if self.__schedule_invoke_count < 1:
             raise errors.StatusError('no scheduled invoke tasks')
 
-        if self.get_event_loop().is_running():
+        if self._get_event_loop().is_running():
             raise errors.StatusError('cannot be run repeatedly')
 
         self.__schedule_invoke_waited = True
 
         try:
-            self.get_event_loop().run_forever()
+            self._get_event_loop().run_forever()
         finally:
             self.__schedule_invoke_waited = False
 

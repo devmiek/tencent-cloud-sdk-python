@@ -447,7 +447,7 @@ class FunctionResultType:
     ResourceLimit: str = 'ResourceLimitExceeded'
     UserCodeError: str = 'UserCodeException'
 
-class AbstractClient(client.BaseClient):
+class AbstractClient(client.UniversalClient):
     '''
     Abstract client type representing Serverless
         Cloud Function products.
@@ -456,23 +456,23 @@ class AbstractClient(client.BaseClient):
         manually unless necessary.
 
     Args:
-        credentials_context: Authentication context instance.
-        proxies_context: Proxy server context instance.
+        access_credentials: Authentication context instance.
+        access_proiexs: Proxy server context instance.
     '''
 
     def __init__(self,
-        credentials_context: credentials.Credentials = None,
-        proxies_context: proxies.Proxies = None
+        access_credentials: credentials.Credentials = None,
+        access_proiexs: proxies.Proxies = None
     ):
-        self.__product_id: str = 'scf'
-
         super().__init__(
-            credentials_context = credentials_context,
-            request_proxies_context = proxies_context,
-            request_endpoint = ('scf.tencentcloudapi.com' if not
-                helper.is_cloud_function_container() else 'scf.internal.tencentcloudapi.com')
+            product_id = 'scf',
+            access_credentials = access_credentials,
+            access_proiexs = access_proiexs
         )
-    
+
+        if helper.is_cloud_function_container():
+            self.set_access_endpoint('scf.internal.tencentcloudapi.com')
+
     async def invoke_async(self,
         region_id: str,
         namespace_name: str,
@@ -541,9 +541,8 @@ class AbstractClient(client.BaseClient):
 
             action_parameters['Qualifier'] = function_version
 
-        action_result: dict = await self.request_action_async(
+        action_result: dict = await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'Invoke',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -607,7 +606,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        return self.get_event_loop().run_until_complete(self.invoke_async(region_id,
+        return self._get_event_loop().run_until_complete(self.invoke_async(region_id,
             namespace_name, function_name, function_event, function_version, function_async))
 
     async def create_function_async(self,
@@ -725,9 +724,8 @@ class AbstractClient(client.BaseClient):
 
         action_parameters.update(function_code.generate_code_parameters())
 
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'CreateFunction',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -765,7 +763,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.create_function_async(region_id,
+        self._get_event_loop().run_until_complete(self.create_function_async(region_id,
             namespace_name, function_name, function_description, function_code,
             function_runtime, function_type, function_configure))
 
@@ -799,9 +797,8 @@ class AbstractClient(client.BaseClient):
         if not function_name or not isinstance(function_name, str):
             raise ValueError('<function_name> value invalid')
 
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'DeleteFunction',
             action_parameters = {
                 'Namespace': namespace_name,
@@ -831,7 +828,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.delete_function_async(
+        self._get_event_loop().run_until_complete(self.delete_function_async(
             region_id, namespace_name, function_name))
 
     async def publish_function_version_async(self,
@@ -877,9 +874,8 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['Description'] = version_description
         
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'PublishVersion',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -908,7 +904,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.publish_function_version_async(
+        self._get_event_loop().run_until_complete(self.publish_function_version_async(
             region_id, namespace_name, function_name, version_description))
 
     async def copy_function_async(self,
@@ -967,9 +963,8 @@ class AbstractClient(client.BaseClient):
         if copy_configure != None and not isinstance(copy_configure, bool):
             raise ValueError('<copy_configure> value invalid')
 
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'CopyFunction',
             action_parameters = {
                 'Namespace': namespace_name,
@@ -1015,7 +1010,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.copy_function_async(
+        self._get_event_loop().run_until_complete(self.copy_function_async(
             region_id, namespace_name, function_name, target_region_id,
             target_namespace_name, target_function_name, allow_override,
             copy_configure))
@@ -1109,9 +1104,8 @@ class AbstractClient(client.BaseClient):
         else:
             raise ValueError('<function_code> value invalid')
 
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'UpdateFunctionCode',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -1143,7 +1137,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.update_function_code_async(region_id,
+        self._get_event_loop().run_until_complete(self.update_function_code_async(region_id,
             namespace_name, function_name, function_code, function_handler))
 
     async def update_function_configure_async(self,
@@ -1240,9 +1234,8 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['Description'] = function_description
         
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'UpdateFunctionConfiguration',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -1274,7 +1267,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.update_function_configure_async(region_id,
+        self._get_event_loop().run_until_complete(self.update_function_configure_async(region_id,
             namespace_name, function_name, function_description, function_configure))
 
     async def get_function_result_by_request_id_async(self,
@@ -1327,9 +1320,8 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['Qualifier'] = function_version
 
-        action_result: dict = await self.request_action_async(
+        action_result: dict = await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'GetFunctionLogs',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -1381,7 +1373,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        return self.get_event_loop().run_until_complete(
+        return self._get_event_loop().run_until_complete(
             self.get_function_result_by_request_id_async(region_id, namespace_name,
                 function_name, function_request_id, function_version))
 
@@ -1450,9 +1442,8 @@ class AbstractClient(client.BaseClient):
                 raise ValueError('<requirement_context> value missing field: ' + str(error))
         
         while True:
-            action_result: dict = await self.request_action_async(
+            action_result: dict = await self.action_async(
                 region_id = region_id,
-                product_id = self.__product_id,
                 action_id = 'GetFunctionLogs',
                 action_parameters = action_parameters,
                 action_version = '2018-04-16'
@@ -1522,7 +1513,7 @@ class AbstractClient(client.BaseClient):
             namespace_name, function_name, requirement_context, function_version)
 
         while True:
-            function_result: dict = self.get_event_loop().run_until_complete(
+            function_result: dict = self._get_event_loop().run_until_complete(
                 helper.generator_proxy_async(async_generator))
 
             if not function_result:
@@ -1588,9 +1579,8 @@ class AbstractClient(client.BaseClient):
                 } for tag_context in requirement_context['tags']]
         
         while True:
-            action_result: dict = await self.request_action_async(
+            action_result: dict = await self.action_async(
                 region_id = region_id,
-                product_id = self.__product_id,
                 action_id = 'ListFunctions',
                 action_parameters = action_parameters,
                 action_version = '2018-04-16'
@@ -1655,7 +1645,7 @@ class AbstractClient(client.BaseClient):
             namespace_name, requirement_context)
 
         while True:
-            function_info: dict = self.get_event_loop().run_until_complete(
+            function_info: dict = self._get_event_loop().run_until_complete(
                 helper.generator_proxy_async(async_generator))
             
             if not function_info:
@@ -1700,9 +1690,8 @@ class AbstractClient(client.BaseClient):
         if not function_name or not isinstance(function_name, str):
             raise ValueError('<function_name> value invalid')
         
-        action_result: dict = await self.request_action_async(
+        action_result: dict = await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'ListVersionByFunction',
             action_parameters = {
                 'Namespace': namespace_name,
@@ -1749,7 +1738,7 @@ class AbstractClient(client.BaseClient):
             namespace_name, function_name)
 
         while True:
-            version_info: dict = self.get_event_loop().run_until_complete(
+            version_info: dict = self._get_event_loop().run_until_complete(
                 helper.generator_proxy_async(async_generator))
             
             if not version_info:
@@ -1803,9 +1792,8 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['Qualifier'] = function_version
         
-        action_result: dict = await self.request_action_async(
+        action_result: dict = await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'GetFunction',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -1898,7 +1886,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        return self.get_event_loop().run_until_complete(self.get_function_info_async(
+        return self._get_event_loop().run_until_complete(self.get_function_info_async(
             region_id, namespace_name, function_name, function_version))
 
     async def _commit_trigger_async(self,
@@ -1941,9 +1929,8 @@ class AbstractClient(client.BaseClient):
         if function_trigger_context['configure']:
             action_parameters['TriggerDesc'] = function_trigger_context['configure']
 
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'CreateTrigger' if not is_delete_trigger else 'DeleteTrigger',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -2004,7 +1991,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self._commit_trigger_async(
+        self._get_event_loop().run_until_complete(self._commit_trigger_async(
             region_id, namespace_name, function_name, function_trigger,
             function_version, False))
 
@@ -2034,7 +2021,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self._commit_trigger_async(
+        self._get_event_loop().run_until_complete(self._commit_trigger_async(
             region_id, namespace_name, function_name, function_trigger,
             function_version, True))
     
@@ -2064,7 +2051,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self._commit_trigger_async(
+        self._get_event_loop().run_until_complete(self._commit_trigger_async(
             region_id, namespace_name, function_name, function_trigger,
             function_version, True))
 
@@ -2105,9 +2092,8 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['Description'] = namespace_description
         
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'CreateNamespace',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -2134,7 +2120,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.create_namespace_async(
+        self._get_event_loop().run_until_complete(self.create_namespace_async(
             region_id, namespace_name, namespace_description))
 
     async def delete_namespace_async(self,
@@ -2162,9 +2148,8 @@ class AbstractClient(client.BaseClient):
         if not namespace_name or not isinstance(namespace_name, str):
             raise ValueError('<namespace_name> value invalid')
 
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'DeleteNamespace',
             action_parameters = {
                 'Namespace': namespace_name
@@ -2191,7 +2176,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.delete_namespace_async(
+        self._get_event_loop().run_until_complete(self.delete_namespace_async(
             region_id, namespace_name))
 
     async def list_namespaces_async(self,
@@ -2226,9 +2211,8 @@ class AbstractClient(client.BaseClient):
         }
 
         while True:
-            action_result: dict = await self.request_action_async(
+            action_result: dict = await self.action_async(
                 region_id = region_id,
-                product_id = self.__product_id,
                 action_id = 'ListNamespaces',
                 action_parameters = action_parameters,
                 action_version = '2018-04-16'
@@ -2281,7 +2265,7 @@ class AbstractClient(client.BaseClient):
         async_generator: object = self.list_namespaces_async(region_id)
 
         while True:
-            namespace_info: dict = self.get_event_loop().run_until_complete(
+            namespace_info: dict = self._get_event_loop().run_until_complete(
                 helper.generator_proxy_async(async_generator))
             
             if not namespace_info:
@@ -2319,9 +2303,8 @@ class AbstractClient(client.BaseClient):
         if not namespace_description or not isinstance(namespace_description, str):
             raise ValueError('<namespace_description> value invalid')
 
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'UpdateNamespace',
             action_parameters = {
                 'Namespace': namespace_name,
@@ -2351,7 +2334,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.    
         '''
 
-        self.get_event_loop().run_until_complete(self.update_namespace_async(
+        self._get_event_loop().run_until_complete(self.update_namespace_async(
             region_id, namespace_name, namespace_description))
 
     async def get_function_code_download_url_async(self,
@@ -2401,9 +2384,8 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['Qualifier'] = function_version
         
-        action_result: dict = await self.request_action_async(
+        action_result: dict = await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'GetFunctionAddress',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -2445,7 +2427,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        return self.get_event_loop().run_until_complete(
+        return self._get_event_loop().run_until_complete(
             self.get_function_code_download_url_async(region_id, namespace_name,
             function_name, function_version))
 
@@ -2475,7 +2457,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        if not download_file_name or not isinstance(download_file_name, str):
+        if download_file_name and not isinstance(download_file_name, str):
             raise ValueError('<download_file_name> value invalid')
 
         download_info: dict = await self.get_function_code_download_url_async(
@@ -2484,10 +2466,10 @@ class AbstractClient(client.BaseClient):
         if not download_file_name:
             download_file_name = './function-code-{FUNCTION_NAME}-{FUNCTION_VERSION}.zip'.format(
                 FUNCTION_NAME = function_name,
-                FUNCTION_VERSION = function_version
+                FUNCTION_VERSION = function_version if function_version else 'latest'
             )
 
-        await self.download_resource_async(
+        await self._download_resource_async(
             resource_url = download_info['url'],
             local_file_name = download_file_name
         )
@@ -2518,7 +2500,7 @@ class AbstractClient(client.BaseClient):
                 was unexpected.
         '''
 
-        self.get_event_loop().run_until_complete(self.download_function_code_async(
+        self._get_event_loop().run_until_complete(self.download_function_code_async(
             region_id, namespace_name, function_name, function_version, download_file_name))
 
     async def create_layer_async(self,
@@ -2575,9 +2557,8 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['LicenseInfo'] = layer_license
 
-        action_result: dict = await self.request_action_async(
+        action_result: dict = await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'PublishLayerVersion',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -2614,7 +2595,7 @@ class AbstractClient(client.BaseClient):
             ValueError: Parameter values are not as expected.
         '''
 
-        return self.get_event_loop().run_until_complete(self.create_layer_async(
+        return self._get_event_loop().run_until_complete(self.create_layer_async(
             region_id, layer_name, layer_description, layer_content,
             layer_runtimes, layer_license
         ))
@@ -2645,9 +2626,8 @@ class AbstractClient(client.BaseClient):
         if not layer_version or not isinstance(layer_version, int):
             raise ValueError('<layer_version> value invalid')
 
-        await self.request_action_async(
+        await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'DeleteLayerVersion',
             action_parameters = {
                 'LayerName': layer_name,
@@ -2673,7 +2653,7 @@ class AbstractClient(client.BaseClient):
             ValueError: Parameter values are not as expected.
         '''
 
-        self.get_event_loop().run_until_complete(self.delete_layer_async(
+        self._get_event_loop().run_until_complete(self.delete_layer_async(
             region_id, layer_name, layer_version
         ))
 
@@ -2706,9 +2686,8 @@ class AbstractClient(client.BaseClient):
         if not layer_version or not isinstance(layer_version, int):
             raise ValueError('<layer_version> value invalid')
         
-        action_result: dict = await self.request_action_async(
+        action_result: dict = await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'GetLayerVersion',
             action_parameters = {
                 'LayerName': layer_name,
@@ -2754,7 +2733,7 @@ class AbstractClient(client.BaseClient):
             ValueError: Parameter values are not as expected.
         '''
 
-        return self.get_event_loop().run_until_complete(self.get_layer_info_async(
+        return self._get_event_loop().run_until_complete(self.get_layer_info_async(
             region_id, layer_name, layer_version
         ))
 
@@ -2797,9 +2776,8 @@ class AbstractClient(client.BaseClient):
                     action_parameters['SearchKey'] = requirement_context['search']['layer_name']
 
         while True:
-            action_result: dict = await self.request_action_async(
+            action_result: dict = await self.action_async(
                 region_id = region_id,
-                product_id = self.__product_id,
                 action_id = 'ListLayers',
                 action_parameters = action_parameters,
                 action_version = '2018-04-16'
@@ -2848,7 +2826,7 @@ class AbstractClient(client.BaseClient):
         )
 
         while True:
-            layer_info: dict = self.get_event_loop().run_until_complete(
+            layer_info: dict = self._get_event_loop().run_until_complete(
                 helper.generator_proxy_async(async_generator))
             
             if not layer_info:
@@ -2894,9 +2872,8 @@ class AbstractClient(client.BaseClient):
             if 'runtimes' in requirement_context:
                 action_parameters['CompatibleRuntime'] = requirement_context['runtimes']
         
-        action_results: dict = await self.request_action_async(
+        action_results: dict = await self.action_async(
             region_id = region_id,
-            product_id = self.__product_id,
             action_id = 'ListLayerVersions',
             action_parameters = action_parameters,
             action_version = '2018-04-16'
@@ -2942,7 +2919,7 @@ class AbstractClient(client.BaseClient):
         )
 
         while True:
-            layer_info: dict = self.get_event_loop().run_until_complete(
+            layer_info: dict = self._get_event_loop().run_until_complete(
                 helper.generator_proxy_async(async_generator))
             
             if not layer_info:
@@ -3012,13 +2989,13 @@ class AbstractClient(client.BaseClient):
             
             action_parameters['AnnounceInstance'] += ('::' + function_version)
 
-        await self.request_action_async(
-            region_id = region_id,
+        await self.action_for_product_async(
             product_id = 'monitor',
+            region_id = region_id,
             action_id = 'PutMonitorData',
             action_parameters = action_parameters,
             action_version = '2018-07-24',
-            action_endpoint = 'monitor.tencentcloudapi.com'
+            access_endpoint = 'monitor.tencentcloudapi.com'
         )
 
     def submit_monitor_indicator(self,
@@ -3048,7 +3025,7 @@ class AbstractClient(client.BaseClient):
             ValueError: Parameter values are not as expected.
         '''
 
-        self.get_event_loop().run_until_complete(self.submit_monitor_indicator_async(
+        self._get_event_loop().run_until_complete(self.submit_monitor_indicator_async(
             region_id, namespace_name, function_name, indicator_name,
             indicator_value, function_version
         ))
