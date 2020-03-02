@@ -105,7 +105,7 @@ class Credentials:
         if not secret_key or not isinstance(secret_key, str):
             raise ValueError('<secret_key> value invalid')
 
-        if not secret_token or not isinstance(secret_token, str):
+        if secret_token and not isinstance(secret_token, str):
             raise ValueError('<secret_token> value invalid')
 
         self.__secret_id = secret_id
