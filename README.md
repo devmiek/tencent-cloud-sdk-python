@@ -75,7 +75,7 @@ Then, we need to instantiate a product client for Serverless Cloud Function:
 
 ```python
 function_client: functions.Client = functions.Client(
-    credentials_context = access_credentials
+    access_credentials = access_credentials
 )
 ```
 
@@ -123,7 +123,7 @@ Below we take Cloud Virtual Machine (CVM) products as an example:
 ```python
 virtual_machine_client: client.UniversalClient = client.UniversalClient(
     product_id = 'cvm',     # Unique identifier of the product
-    credentials_context = access_credentials    # Access credentials
+    access_credentials = access_credentials    # Access credentials
 )
 ```
 
