@@ -305,7 +305,7 @@ class BaseClient:
 
         signature_timestamp: int = int(time.time())
 
-        auth_content: str = self.__access_credentials.generate_and_signature(
+        auth_content, auth_token = self.__access_credentials.generate_and_signature(
             request_hostname = self.__access_endpoint if not access_endpoint else access_endpoint,
             request_method = 'POST',
             request_parameters = action_parameters,
@@ -324,6 +324,7 @@ class BaseClient:
                     'X-TC-Region': region_id if region_id else str(),
                     'X-TC-Timestamp': str(signature_timestamp),
                     'X-TC-Version': action_version,
+                    'X-TC-Token': auth_token if auth_token else str(),
                     'Authorization': auth_content
                 },
                 proxy = '{PROXY_TYPE}://{PROXY_ENDPOINT}'.format(

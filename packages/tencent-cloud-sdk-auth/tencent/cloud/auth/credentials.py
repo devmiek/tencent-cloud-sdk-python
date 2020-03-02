@@ -49,8 +49,9 @@ class Credentials:
     The authentication context type representing the account access key.
 
     Args:
-        secret_id: ID of the account access key
-        secret_key: Key for account access key
+        secret_id: ID for access credentials.
+        secret_key: Key for access credentials.
+        secret_token: Token for access credentials.
     
     Raises:
         ValueError: Parameter values are not as expected.
@@ -58,9 +59,14 @@ class Credentials:
 
     def __init__(self,
         secret_id: str,
-        secret_key: str
+        secret_key: str,
+        secret_token: str = None
     ):
-        self.set_secret_info(secret_id, secret_key)
+        self.__secret_id: str = None
+        self.__secret_key: str = None
+        self.__secret_token: str = None
+
+        self.set_secret_info(secret_id, secret_key, secret_token)
 
     def get_secret_info(self) -> dict:
         '''
@@ -71,20 +77,23 @@ class Credentials:
         '''
 
         return {
-            'secret_id': self.__secret_id,
-            'secret_key': self.__secret_key
+            'id': self.__secret_id,
+            'key': self.__secret_key,
+            'token': self.__secret_token
         }
 
     def set_secret_info(self,
         secret_id: str,
-        secret_key: str
+        secret_key: str,
+        secret_token: str = None
     ):
         '''
         Set secret information for access credentials.
 
         Args:
-            secret_id: ID of the account access key
-            secret_key: Key for account access key
+            secret_id: ID for access credentials.
+            secret_key: Key for access credentials.
+            secret_token: Token for access credentials.
         
         Raises:
             ValueError: Parameter values are not as expected.
@@ -96,8 +105,12 @@ class Credentials:
         if not secret_key or not isinstance(secret_key, str):
             raise ValueError('<secret_key> value invalid')
 
-        self.__secret_id: str = secret_id
-        self.__secret_key: str = secret_key
+        if not secret_token or not isinstance(secret_token, str):
+            raise ValueError('<secret_token> value invalid')
+
+        self.__secret_id = secret_id
+        self.__secret_key = secret_key
+        self.__secret_token = secret_token
 
     def generate_canonical_content(self,
         request_hostname: str,
@@ -247,7 +260,7 @@ class Credentials:
         signature_product_id: str,
         signature_timestamp: int,
         signature_result: str
-    ) -> str:
+    ) -> tuple:
         '''
         Generates a signed authentication context string
             that can be verified by Cloud API.
@@ -273,7 +286,7 @@ class Credentials:
         if not signature_result or not isinstance(signature_result, str):
             raise ValueError('<signature_result> value invalid')
 
-        return (
+        return ((
             'TC3-HMAC-SHA256 '
             'Credential={SECRET_ID}/{SIGNATURE_DATE}/{SIGNATURE_PRODUCT_ID}/tc3_request, '
             'SignedHeaders=content-type;host, Signature={SIGNATURE_RESULT}'
@@ -283,7 +296,7 @@ class Credentials:
                 ).strftime('%Y-%m-%d'),
             SIGNATURE_PRODUCT_ID = signature_product_id,
             SIGNATURE_RESULT = signature_result
-        )
+        ), self.__secret_token)
 
     def generate_and_signature(self,
         request_hostname: str,
@@ -330,7 +343,8 @@ class EnvironmentalCredentials(Credentials):
 
     Args:
         variable_name_of_secret_id: Environment variable name with secret-id.
-        variable_name_of_secret_keyEnvironment variable name with secret-key.
+        variable_name_of_secret_key: Environment variable name with secret-key.
+        variable_name_of_secret_token: Environment variable name with secret-token.
 
     Raises:
         EnvironmentError: The current operating environment is not as expected.
@@ -340,13 +354,17 @@ class EnvironmentalCredentials(Credentials):
 
     def __init__(self,
         variable_name_of_secret_id: str = 'TENCENTCLOUD_SECRETID',
-        variable_name_of_secret_key: str = 'TENCENTCLOUD_SECRETKEY'
+        variable_name_of_secret_key: str = 'TENCENTCLOUD_SECRETKEY',
+        variable_name_of_secret_token: str = 'TENCENTCLOUD_SESSIONTOKEN'
     ):
         if not variable_name_of_secret_id or not isinstance(variable_name_of_secret_id, str):
             raise ValueError('<variable_name_of_secret_id> value invalid')
 
         if not variable_name_of_secret_key or not isinstance(variable_name_of_secret_key, str):
             raise ValueError('<variable_name_of_secret_key> value invalid')
+
+        if not variable_name_of_secret_token or not isinstance(variable_name_of_secret_token, str):
+            raise ValueError('<variable_name_of_secret_token> value invalid')
 
         if variable_name_of_secret_id not in os.environ:
             raise EnvironmentError('missing environment variable <{VARIABLE_NAME}>'.format(
@@ -357,10 +375,11 @@ class EnvironmentalCredentials(Credentials):
             raise EnvironmentError('missing environment variable <{VARIABLE_NAME}>'.format(
                 VARIABLE_NAME = variable_name_of_secret_key
             ))
-
+        
         super().__init__(
             secret_id = os.environ[variable_name_of_secret_id],
-            secret_key = os.environ[variable_name_of_secret_key]
+            secret_key = os.environ[variable_name_of_secret_key],
+            secret_token = os.environ.get(variable_name_of_secret_token, None)
         )
 
 class FileCredentials(Credentials):
