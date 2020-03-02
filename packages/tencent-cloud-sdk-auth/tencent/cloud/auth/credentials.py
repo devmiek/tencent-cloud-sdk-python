@@ -260,7 +260,7 @@ class Credentials:
         signature_product_id: str,
         signature_timestamp: int,
         signature_result: str
-    ) -> tuple:
+    ) -> str:
         '''
         Generates a signed authentication context string
             that can be verified by Cloud API.
@@ -286,7 +286,7 @@ class Credentials:
         if not signature_result or not isinstance(signature_result, str):
             raise ValueError('<signature_result> value invalid')
 
-        return ((
+        return (
             'TC3-HMAC-SHA256 '
             'Credential={SECRET_ID}/{SIGNATURE_DATE}/{SIGNATURE_PRODUCT_ID}/tc3_request, '
             'SignedHeaders=content-type;host, Signature={SIGNATURE_RESULT}'
@@ -296,7 +296,7 @@ class Credentials:
                 ).strftime('%Y-%m-%d'),
             SIGNATURE_PRODUCT_ID = signature_product_id,
             SIGNATURE_RESULT = signature_result
-        ), self.__secret_token)
+        )
 
     def generate_and_signature(self,
         request_hostname: str,
@@ -304,7 +304,7 @@ class Credentials:
         request_parameters: dict,
         signature_product_id: str,
         signature_timestamp: int,
-    ) -> str:
+    ) -> tuple:
         '''
         Generates and calculates an authentication context string
             for the TC3-HMAC-SHA256 signature algorithm based on
@@ -318,7 +318,8 @@ class Credentials:
             signature_timestamp: Cloud API's signed UNIX timestamp.
         
         Returns:
-            Returns the authentication context string.
+            Returns a tuple containing an authentication context
+                string and a token string.
         
         Raises:
             ValueError: Parameter values are not as expected.
@@ -333,8 +334,11 @@ class Credentials:
         signature_result: str = self.signature(
             signature_product_id, signature_timestamp, signature_content)
 
-        return self.generate_auth_content(
-            signature_product_id, signature_timestamp, signature_result)
+        return (
+            self.generate_auth_content(signature_product_id,
+                signature_timestamp, signature_result),
+            self.__secret_token
+        )
 
 class EnvironmentalCredentials(Credentials):
     '''
