@@ -57,7 +57,7 @@ setuptools.setup(
         'Development Status :: 4 - Beta'
     ),
     install_requires = [
-        'tencent-cloud-sdk-auth>=0.1.2',
+        'tencent-cloud-sdk-auth>=0.1.3',
         'tencent-cloud-sdk-core>=0.1.3',
         'tencent-cloud-sdk-serverless-functions>=0.1.3'
     ]
