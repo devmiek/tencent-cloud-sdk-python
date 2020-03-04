@@ -166,6 +166,14 @@ class BaseClient:
         '''
 
         return self.__access_credentials
+    
+    @property
+    def proxies(self) -> proxies.Proxies:
+        '''
+        Binding proxy server configuration instance.
+        '''
+
+        return self.__access_proxies
 
     @property
     def enable_builtin_error_handler(self) -> bool:

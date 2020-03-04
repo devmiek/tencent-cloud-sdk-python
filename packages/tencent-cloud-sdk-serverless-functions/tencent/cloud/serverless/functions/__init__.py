@@ -34,6 +34,7 @@ Example:
 import time
 import asyncio
 import inspect
+import threading
 
 from tencent.cloud.core import proxies
 from tencent.cloud.auth import credentials
@@ -620,60 +621,63 @@ class Client(client.AbstractClient):
         finally:
             self.__schedule_invoke_waited = False
 
-# Built-in client instances for specific operating environments
-__builtin_managed_client: Client = None
+__thread_local_attributes: threading.local = threading.local()
 
-def get_builtin_client() -> Client:
+def fetch_client() -> Client:
     '''
-    Get the built-in managed client instance.
-
-    Note that if the built-in managed client instance does not exist,
-        create a client instance and set it as the built-in managed client.
+    Get the built-in serverless cloud function product client
+        instance for the current hyperthreading. If the built-in
+        serverless cloud function product client instance has never
+        been created in the current hyper-threading, a new one
+        is created by default.
 
     Returns:
-        Returns the client instance.
-    '''
-    
-    global __builtin_managed_client
-
-    if not __builtin_managed_client:
-        __builtin_managed_client = Client(None)
-
-    return __builtin_managed_client
-
-def has_builtin_client() -> bool:
-    '''
-    Whether the built-in managed client instance has been created
-
-    Returns:
-        Returns true if the built-in managed client has been created,
-            otherwise returns false.
+        Returns a serverless cloud function product client instance.
     '''
 
-    return __builtin_managed_client != None
+    global __thread_local_attributes
 
-def set_builtin_client(
+    if not hasattr(__thread_local_attributes, 'builtin_client'):
+        __thread_local_attributes.builtin_client = Client()
+
+    return __thread_local_attributes.builtin_client
+
+def set_client(
     function_client: Client
 ):
     '''
-    Set up an created client instance as the new built-in
-        managed client.
+    Sets the given serverless cloud function product client instance
+        as the built-in client instance of the current hyper-threading.
 
-    Note that if the built-in managed client is created,
-        it will be overwritten.
-    
     Args:
         function_client: Serverless cloud function product client instance.
-    
+
     Raises:
-        ValueError: Parameter values are not as expected.
+        ValueError: The parameter value is not as expected.
     '''
 
     if not function_client or not isinstance(function_client, Client):
         raise ValueError('<function_client> value invalid')
 
-    global __builtin_managed_client
-    __builtin_managed_client = function_client
+    global __thread_local_attributes
+    __thread_local_attributes.builtin_client = function_client
+
+def destroy_client():
+    '''
+    Destroy the client instance of the built-in serverless cloud function
+        product suitable for the current hyper-threading.
+
+    Raises:
+        UnboundLocalError: No built-in serverless cloud function product
+            client instance has ever been created.
+    '''
+
+    global __thread_local_attributes
+
+    if not hasattr(__thread_local_attributes, 'builtin_client'):
+        raise UnboundLocalError('no such builtin client')
+    
+    del __thread_local_attributes.builtin_client
 
 def invoke(
     function_name: str,
@@ -709,14 +713,9 @@ def invoke(
         InvokeError: Invoke Cloud Function failed.
         ActionError: Invoke Cloud Function error.
     '''
-
-    global __builtin_managed_client
-
-    if not __builtin_managed_client:
-        __builtin_managed_client = Client(None)
     
-    return __builtin_managed_client.easy_invoke(region_id, namespace_name, function_name,
-        function_event, function_version, function_async)
+    return fetch_client().easy_invoke(region_id, namespace_name,
+        function_name, function_event, function_version, function_async)
 
 async def invoke_async(
     function_name: str,
@@ -752,11 +751,7 @@ async def invoke_async(
         InvokeError: Invoke Cloud Function failed.
         ActionError: Invoke Cloud Function error.
     '''
-
-    global __builtin_managed_client
-
-    if not __builtin_managed_client:
-        __builtin_managed_client = Client(None)
     
-    return await __builtin_managed_client.easy_invoke_async(region_id, namespace_name, function_name,
-        function_event, function_version, function_async)
+    return await fetch_client().easy_invoke_async(region_id,
+        namespace_name, function_name, function_event,
+        function_version, function_async)

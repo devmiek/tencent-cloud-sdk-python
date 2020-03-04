@@ -112,6 +112,14 @@ class Credentials:
         self.__secret_key = secret_key
         self.__secret_token = secret_token
 
+    def refresh_secret_info(self):
+        '''
+        Refresh the access credential information for which the
+            current access credential has been set.
+        '''
+
+        pass
+
     def generate_canonical_content(self,
         request_hostname: str,
         request_method: str,
@@ -325,6 +333,8 @@ class Credentials:
             ValueError: Parameter values are not as expected.
         '''
 
+        self.refresh_secret_info()
+
         canonical_content: str = self.generate_canonical_content(
             request_hostname, request_method, request_parameters)
 
@@ -380,10 +390,32 @@ class EnvironmentalCredentials(Credentials):
                 VARIABLE_NAME = variable_name_of_secret_key
             ))
         
+        self.__variable_names: dict = {
+            'secret_id': variable_name_of_secret_id,
+            'secret_key': variable_name_of_secret_key,
+            'secret_token': variable_name_of_secret_token
+        }
+
         super().__init__(
             secret_id = os.environ[variable_name_of_secret_id],
             secret_key = os.environ[variable_name_of_secret_key],
             secret_token = os.environ.get(variable_name_of_secret_token, None)
+        )
+
+    def refresh_secret_info(self):
+        '''
+        Refresh the access credential information for which the
+            current access credential has been set.
+
+        This method will again look up the access credential
+            information from the environment variables of
+            the current running environment.
+        '''
+
+        self.set_secret_info(
+            secret_id = os.environ[self.__variable_names['secret_id']],
+            secret_key = os.environ[self.__variable_names['secret_key']],
+            secret_token = os.environ.get(self.__variable_names['secret_token'], None)
         )
 
 class FileCredentials(Credentials):
