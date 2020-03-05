@@ -379,28 +379,26 @@ class EnvironmentalCredentials(Credentials):
 
         if not variable_name_of_secret_token or not isinstance(variable_name_of_secret_token, str):
             raise ValueError('<variable_name_of_secret_token> value invalid')
-
-        if variable_name_of_secret_id not in os.environ:
+        
+        try:
+            super().__init__(
+                secret_id = os.environ[variable_name_of_secret_id],
+                secret_key = os.environ[variable_name_of_secret_key],
+                secret_token = os.environ.get(variable_name_of_secret_token, None)
+            )
+        except KeyError as error:
             raise EnvironmentError('missing environment variable <{VARIABLE_NAME}>'.format(
-                VARIABLE_NAME = variable_name_of_secret_id
+                VARIABLE_NAME = str(error)
             ))
         
-        if variable_name_of_secret_key not in os.environ:
-            raise EnvironmentError('missing environment variable <{VARIABLE_NAME}>'.format(
-                VARIABLE_NAME = variable_name_of_secret_key
-            ))
-        
-        self.__variable_names: dict = {
-            'secret_id': variable_name_of_secret_id,
-            'secret_key': variable_name_of_secret_key,
-            'secret_token': variable_name_of_secret_token
-        }
-
-        super().__init__(
-            secret_id = os.environ[variable_name_of_secret_id],
-            secret_key = os.environ[variable_name_of_secret_key],
-            secret_token = os.environ.get(variable_name_of_secret_token, None)
-        )
+        if not self.get_secret_info()['token']:
+            self.refresh_secret_info = super().refresh_secret_info
+        else:
+            self.__variable_names: dict = {
+                'secret_id': variable_name_of_secret_id,
+                'secret_key': variable_name_of_secret_key,
+                'secret_token': variable_name_of_secret_token
+            }
 
     def refresh_secret_info(self):
         '''
@@ -412,11 +410,16 @@ class EnvironmentalCredentials(Credentials):
             the current running environment.
         '''
 
-        self.set_secret_info(
-            secret_id = os.environ[self.__variable_names['secret_id']],
-            secret_key = os.environ[self.__variable_names['secret_key']],
-            secret_token = os.environ.get(self.__variable_names['secret_token'], None)
-        )
+        try:
+            self.set_secret_info(
+                secret_id = os.environ[self.__variable_names['secret_id']],
+                secret_key = os.environ[self.__variable_names['secret_key']],
+                secret_token = os.environ.get(self.__variable_names['secret_token'], None)
+            )
+        except KeyError as error:
+            raise EnvironmentError('missing environment variable <{VARIABLE_NAME}>'.format(
+                VARIABLE_NAME = str(error)
+            ))
 
 class FileCredentials(Credentials):
     '''
