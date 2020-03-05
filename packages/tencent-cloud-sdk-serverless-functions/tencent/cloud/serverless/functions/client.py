@@ -1574,7 +1574,7 @@ class AbstractClient(client.UniversalClient):
 
             if 'tags' in requirement_context:
                 action_parameters['Filters'] = [{
-                    'Name': tag_context['name'],
+                    'Name': 'tag-' + tag_context['name'],
                     'Values': [value for value in tag_context['values']]
                 } for tag_context in requirement_context['tags']]
         
