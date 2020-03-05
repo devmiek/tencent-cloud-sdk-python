@@ -1599,8 +1599,8 @@ class AbstractClient(client.UniversalClient):
                         'name': function_info['FunctionName'],
                         'description': function_info['Description'],
                         'runtime': function_info['Runtime'],
-                        'tags': {name: function_info['Tags'][name]
-                            for name in function_info['Tags']},
+                        'tags': {tag_info['Key']: tag_info['Value']
+                            for tag_info in function_info['Tags']},
                         'last_modified_time': function_info['ModTime'],
                         'create_time': function_info['AddTime']
                     }
@@ -1809,8 +1809,8 @@ class AbstractClient(client.UniversalClient):
                     'name': action_result['FunctionName'],
                     'description': action_result['Description'],
                     'runtime': action_result['Runtime'],
-                    'tags': {name: action_result['Tags'][name]
-                        for name in action_result['Tags']},
+                    'tags': {tag_info['Key']: tag_info['Value']
+                        for tag_info in action_result['Tags']},
                     'last_modified_time': action_result['ModTime'],
                     'create_time': action_result['AddTime']
                 },
