@@ -261,6 +261,25 @@ class BaseClient:
 
         self.__access_endpoint = access_endpoint
 
+    def set_access_proxies(self,
+        access_proxies: proxies.Proxies
+    ):
+        '''
+        Set the proxy server configuration to use when accessing
+            the Tencent Cloud API.
+        
+        Args:
+            access_proxies: Access proxy server configuration.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+        '''
+
+        if access_proxies and not isinstance(access_proxies, proxies.Proxies):
+            raise ValueError('<access_proxies> value invalid')
+        
+        self.__access_proxies = access_proxies
+
     async def _try_request_action_async(self,
         region_id: str,
         product_id: str,
