@@ -47,7 +47,7 @@ def main():
     # We need to instantiate a product client for Serverless Cloud Function.
 
     function_client: functions.Client = functions.Client(
-        credentials_context = access_credentials
+        access_credentials = access_credentials
     )
 
     # We try to Invoke a Cloud Function and get the return value.
