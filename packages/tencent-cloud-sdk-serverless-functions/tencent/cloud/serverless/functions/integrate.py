@@ -29,7 +29,6 @@ This module implements an integrated dispatcher type
 
 import json
 import base64
-import inspect
 
 from tencent.cloud.core import errors
 
