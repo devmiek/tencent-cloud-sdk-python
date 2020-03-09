@@ -31,7 +31,10 @@ Example:
     print(await functions.invoke_async('hello'))
 '''
 
+import sys
 import time
+import json
+import base64
 import asyncio
 import inspect
 import threading
@@ -53,6 +56,8 @@ from tencent.cloud.serverless.functions.client import FunctionTriggerKind
 from tencent.cloud.serverless.functions.client import FunctionType
 from tencent.cloud.serverless.functions.client import FunctionRuntime
 from tencent.cloud.serverless.functions.client import FunctionResultType
+
+from tencent.cloud.serverless.functions.integrate import IntegrateDispatch
 
 class FunctionResultFuture(asyncio.Future):
     '''
@@ -479,12 +484,15 @@ class Client(client.AbstractClient):
         
         Returns:
             Returns the Python decorator handler function.
+        
+        Raises:
+            TypeError: The bound object is not supported.
         '''
 
         def decorator_handler(
             bound_function: object
         ):
-            if not callable(bound_function):
+            if not bound_function or not callable(bound_function):
                 raise TypeError('invalid binding object type')
 
             def invoke_handler(*args, **kwargs):
@@ -505,6 +513,74 @@ class Client(client.AbstractClient):
 
                 for name in kwargs:
                     function_event[name] = kwargs[name]
+
+                return (self.easy_invoke_async if inspect.iscoroutinefunction(bound_function)
+                    else self.easy_invoke)(region_id, namespace_name, function_name,
+                        function_event, function_version, function_async)
+
+            return invoke_handler
+
+        return decorator_handler
+
+    def bind_routine(self,
+        region_id: str,
+        namespace_name: str,
+        function_name: str,
+        function_version: str = None,
+        function_async: bool = False,
+        routine_name: str = None
+    ) -> object:
+        '''
+        Create a Python native synchronous or asynchronous function's
+            integrated invoke binding for a given Cloud Function.
+        
+        Args:
+            region_id: Unique identifier of the data center campus.
+            namespace_name: Name of the owning namespace.
+            function_name: Cloud Function name.
+            function_version: Cloud Function version.
+            function_async: Make Cloud Function asynchronous invoke.
+            routine_name: Integration invoke routine name.
+        
+        Raises:
+            ValueError: Parameter values are not as expected.
+            TypeError: The bound object is not supported.
+        '''
+
+        if routine_name and not isinstance(routine_name, str):
+            raise ValueError('<routine_name> value invalid')
+
+        def decorator_handler(
+            bound_function: object
+        ) -> object:
+            if not bound_function or not callable(bound_function):
+                raise TypeError('invalid binding object type')
+
+            if not inspect.isfunction(bound_function):
+                raise ValueError('invalid binding object type')
+
+            def invoke_handler(*args, **kwargs):
+                routine_args: dict = dict()
+                parameter_names: list = inspect.getfullargspec(bound_function).args
+
+                for index, value in enumerate(args):
+                    routine_args[parameter_names[index]] = value
+
+                for name in kwargs:
+                    routine_args[name] = kwargs[name]
+
+                function_event: dict = {
+                    'protocol': {
+                        'version': 1,
+                        'payload': base64.b64encode(json.dumps(
+                            {
+                                'routine_name': (routine_name
+                                    if routine_name else bound_function.__name__),
+                                'routine_args': routine_args
+                            }
+                        ).encode()).decode()
+                    }
+                }
 
                 return (self.easy_invoke_async if inspect.iscoroutinefunction(bound_function)
                     else self.easy_invoke)(region_id, namespace_name, function_name,
@@ -755,3 +831,29 @@ async def invoke_async(
     return await fetch_client().easy_invoke_async(region_id,
         namespace_name, function_name, function_event,
         function_version, function_async)
+
+def use_routine_framework() -> IntegrateDispatch:
+    '''
+    Use the routine dispatch framework for integrated
+        invoke for current serverless cloud functions.
+
+    Note that this function will immediately add or override
+        the main function at the source of the call.
+
+    Returns:
+        Returns an instance of the integrated invoke dispatcher.
+
+    Raises:
+        ModuleNotFoundError: Can't fault the module object from which
+            the current function call originated.
+    '''
+
+    integrate_dispatch: IntegrateDispatch = IntegrateDispatch()
+
+    try:
+        module_name: str = inspect.currentframe().f_back.f_globals['__name__']
+        setattr(sys.modules[module_name], 'main', integrate_dispatch.handler)
+    except KeyError:
+        raise ModuleNotFoundError('no call source module found')
+
+    return integrate_dispatch
