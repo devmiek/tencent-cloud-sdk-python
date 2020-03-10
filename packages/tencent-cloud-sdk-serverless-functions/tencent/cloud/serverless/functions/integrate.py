@@ -46,8 +46,8 @@ class IntegrateDispatch:
         bound_function: object
     ) -> object:
         '''
-        Binds a given Python synchronization function to the
-            current integration invoke dispatcher instance.
+        Bind a Python synchronous function instance to the
+            integration invoke dispatcher.
         
         The bound object must be a function, otherwise the
             behavior is undefined.
@@ -108,7 +108,7 @@ class IntegrateDispatch:
 
         try:
             routine_name: str = protocol_context['routine_name']
-            routine_args: dict = protocol_context['routine_args']
+            routine_parameter: dict = protocol_context['routine_parameter']
         except KeyError as error:
             raise ValueError('protocol context missing field: ' + str(error))
 
@@ -117,4 +117,4 @@ class IntegrateDispatch:
         except KeyError:
             raise errors.NotFoundError('no such function: ' + str(routine_name))
 
-        return function_instance(**routine_args)
+        return function_instance(**routine_parameter)

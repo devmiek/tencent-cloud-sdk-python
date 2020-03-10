@@ -403,6 +403,92 @@ class Client(client.AbstractClient):
             return (self._get_event_loop().run_until_complete(self.invoke_async(region_id,
                 namespace_name, function_name, function_event, function_version, True))['request_id'])
 
+    async def routine_invoke_async(self,
+        region_id: str,
+        namespace_name: str,
+        function_name: str,
+        routine_name: str,
+        routine_parameter: dict = None,
+        function_version: str = None,
+        function_async: bool = False
+    ) -> object:
+        '''
+        Invoke given the specified routine of the cloud function.
+
+        Args:
+            region_id: Data center unique identifier.
+            namespace_name: Namespace name.
+            function_name: Serverless cloud function name.
+            routine_name: Routine name for serverless cloud functions.
+            routine_parameter: Routine parameters for serverless cloud functions.
+            function_version: Serverless cloud function version name.
+            function_async: Make Serverless cloud function asynchronous invoke.
+        
+        Returns:
+            Returns the actual return value of the given routine for the
+                given serverless cloud function.
+
+        Raises:
+            ValueError: Parameter values are not as expected.
+            InvokeError: Invoke Cloud Function failed.
+            ActionError: Invoke Cloud Function error.
+        '''
+
+        if not routine_name or not isinstance(routine_name, str):
+            raise ValueError('<routine_name> value invalid')
+
+        if routine_parameter and not isinstance(routine_parameter, dict):
+            raise ValueError('<routine_parameter> value invalid')
+
+        return await self.easy_invoke_async(region_id, namespace_name,
+            function_name, {
+                'protocol': {
+                    'version': 1,
+                    'payload': base64.b64encode(json.dumps(
+                        {
+                            'routine_name': routine_name,
+                            'routine_parameter': routine_parameter
+                        }
+                    ).encode()).decode()
+                }
+            }, function_version, function_async)
+    
+    def routine_invoke(self,
+        region_id: str,
+        namespace_name: str,
+        function_name: str,
+        routine_name: str,
+        routine_parameter: dict = None,
+        function_version: str = None,
+        function_async: bool = False
+    ) -> object:
+        '''
+        Invoke given the specified routine of the cloud function.
+
+        Args:
+            region_id: Data center unique identifier.
+            namespace_name: Namespace name.
+            function_name: Serverless cloud function name.
+            routine_name: Routine name for serverless cloud functions.
+            routine_parameter: Routine parameters for serverless cloud functions.
+            function_version: Serverless cloud function version name.
+            function_async: Make Serverless cloud function asynchronous invoke.
+        
+        Returns:
+            Returns the actual return value of the given routine for the
+                given serverless cloud function.
+
+        Raises:
+            ValueError: Parameter values are not as expected.
+            InvokeError: Invoke Cloud Function failed.
+            ActionError: Invoke Cloud Function error.
+        '''
+
+        return self._get_event_loop().run_until_complete(self.routine_invoke_async(
+            region_id, namespace_name, function_name, routine_name,
+            routine_parameter, function_version, function_async
+        ))
+
     async def select_function_async(self,
         region_id: str,
         namespace_name: str,
@@ -452,6 +538,64 @@ class Client(client.AbstractClient):
 
         return (lambda **function_event: self.easy_invoke(region_id,
             namespace_name, function_name, function_event, function_version, function_async))
+
+    async def select_routine_async(self,
+        region_id: str,
+        namespace_name: str,
+        function_name: str,
+        routine_name: str,
+        function_version: str = None,
+        function_async: bool = False
+    ):
+        '''
+        Creates a Python native asynchronous function for a
+            given routine given a serverless cloud function.
+
+        Args:
+            region_id: Data center unique identifier.
+            namespace_name: Namespace name.
+            function_name: Serverless cloud function name.
+            routine_name: Routine name for serverless cloud functions.
+            function_version: Serverless cloud function version name.
+            function_async: Make Serverless cloud function asynchronous invoke.
+
+        Returns:
+            Returns a Python native asynchronous function instance.
+        '''
+
+        return (lambda **routine_parameter: self.routine_invoke_async(
+            region_id, namespace_name, function_name, routine_name,
+            routine_parameter, function_version, function_async
+        ))
+    
+    def select_routine(self,
+        region_id: str,
+        namespace_name: str,
+        function_name: str,
+        routine_name: str,
+        function_version: str = None,
+        function_async: bool = False
+    ):
+        '''
+        Creates a Python native synchronous function for a
+            given routine given a serverless cloud function.
+
+        Args:
+            region_id: Data center unique identifier.
+            namespace_name: Namespace name.
+            function_name: Serverless cloud function name.
+            routine_name: Routine name for serverless cloud functions.
+            function_version: Serverless cloud function version name.
+            function_async: Make Serverless cloud function asynchronous invoke.
+
+        Returns:
+            Returns a Python native synchronous function instance.
+        '''
+
+        return (lambda **routine_parameter: self.routine_invoke(
+            region_id, namespace_name, function_name, routine_name,
+            routine_parameter, function_version, function_async
+        ))
 
     def bind_function(self,
         region_id: str,
@@ -531,16 +675,16 @@ class Client(client.AbstractClient):
         routine_name: str = None
     ) -> object:
         '''
-        Create a Python native synchronous or asynchronous function's
-            integrated invoke binding for a given Cloud Function.
+        Binds a given Python native synchronous or asynchronous function
+            to a given routine for a given serverless cloud function.
         
         Args:
-            region_id: Unique identifier of the data center campus.
-            namespace_name: Name of the owning namespace.
-            function_name: Cloud Function name.
-            function_version: Cloud Function version.
-            function_async: Make Cloud Function asynchronous invoke.
-            routine_name: Integration invoke routine name.
+            region_id: Data center unique identifier.
+            namespace_name: Namespace name of serverless cloud function.
+            function_name: Serverless cloud function name.
+            function_version: Serverless cloud function version name.
+            function_async: Make Serverless Cloud Function asynchronous invoke.
+            routine_name: Routine name for serverless cloud functions.
         
         Raises:
             ValueError: Parameter values are not as expected.
@@ -559,32 +703,22 @@ class Client(client.AbstractClient):
             if not inspect.isfunction(bound_function):
                 raise ValueError('invalid binding object type')
 
+            method_instance: object = (self.routine_invoke_async if
+                inspect.iscoroutinefunction(bound_function) else self.routine_invoke)
+
             def invoke_handler(*args, **kwargs):
-                routine_args: dict = dict()
+                routine_parameter: dict = dict()
                 parameter_names: list = inspect.getfullargspec(bound_function).args
 
                 for index, value in enumerate(args):
-                    routine_args[parameter_names[index]] = value
+                    routine_parameter[parameter_names[index]] = value
 
                 for name in kwargs:
-                    routine_args[name] = kwargs[name]
+                    routine_parameter[name] = kwargs[name]
 
-                function_event: dict = {
-                    'protocol': {
-                        'version': 1,
-                        'payload': base64.b64encode(json.dumps(
-                            {
-                                'routine_name': (routine_name
-                                    if routine_name else bound_function.__name__),
-                                'routine_args': routine_args
-                            }
-                        ).encode()).decode()
-                    }
-                }
-
-                return (self.easy_invoke_async if inspect.iscoroutinefunction(bound_function)
-                    else self.easy_invoke)(region_id, namespace_name, function_name,
-                        function_event, function_version, function_async)
+                return method_instance(region_id, namespace_name, function_name,
+                    routine_name if routine_name else bound_function.__name__,
+                    routine_parameter, function_version, function_async)
 
             return invoke_handler
 
