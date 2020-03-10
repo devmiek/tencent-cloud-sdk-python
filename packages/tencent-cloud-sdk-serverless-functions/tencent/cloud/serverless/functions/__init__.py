@@ -966,28 +966,41 @@ async def invoke_async(
         namespace_name, function_name, function_event,
         function_version, function_async)
 
-def use_routine_framework() -> IntegrateDispatch:
+def use_routine_dispatcher(
+    override_handler: bool = True
+) -> IntegrateDispatch:
     '''
     Use the routine dispatch framework for integrated
         invoke for current serverless cloud functions.
 
     Note that this function will immediately add or override
-        the main function at the source of the call.
+        the main function at the source of the call, unless
+        the parameter override_handler is set to False.
+
+    Args:
+        override_handler: Whether to create or override the
+            serverless cloud function main processing function
+            at the source of this function call.
 
     Returns:
         Returns an instance of the integrated invoke dispatcher.
 
     Raises:
+        ValueError: Parameter values are not as expected.
         ModuleNotFoundError: Can't fault the module object from which
             the current function call originated.
     '''
 
+    if override_handler == None or not isinstance(override_handler, bool):
+        raise ValueError('<override_handler> value invalid')
+
     integrate_dispatch: IntegrateDispatch = IntegrateDispatch()
 
-    try:
-        module_name: str = inspect.currentframe().f_back.f_globals['__name__']
-        setattr(sys.modules[module_name], 'main', integrate_dispatch.handler)
-    except KeyError:
-        raise ModuleNotFoundError('no call source module found')
+    if override_handler:
+        try:
+            module_name: str = inspect.currentframe().f_back.f_globals['__name__']
+            setattr(sys.modules[module_name], 'main', integrate_dispatch.handler)
+        except KeyError:
+            raise ModuleNotFoundError('no call source module found')
 
     return integrate_dispatch

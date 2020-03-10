@@ -75,13 +75,14 @@ class IntegrateDispatch:
         Args:
             event: Serverless cloud function events.
             context: Serverless cloud function execution metadata.
-        
+
         Raises:
             ValueError: Parameter value or integrated invoke protocol
                 is not as expected.
             NotFoundError: The calling function indicated by the
                 integrated invoke protocol does not exist.
-        
+            RuntimeError: Unsupported invoke request.
+
         Returns:
             Returns an integrated invoke protocol payload string.
         '''
@@ -91,6 +92,9 @@ class IntegrateDispatch:
 
         if not context or not isinstance(context, dict):
             raise ValueError('<context> value invalid')
+
+        if 'protocol' not in event:
+            raise RuntimeError('unsupported invoke request')
 
         try:
             protocol_version: int = event['protocol']['version']
