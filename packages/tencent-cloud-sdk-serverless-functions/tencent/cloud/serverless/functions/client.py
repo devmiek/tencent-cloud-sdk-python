@@ -29,9 +29,11 @@ Implements the client type of Serverless Cloud Function.
 import os
 import json
 import time
+import asyncio
 
 from tencent.cloud.core import client
 from tencent.cloud.core import proxies
+from tencent.cloud.core import waitable
 from tencent.cloud.auth import credentials
 
 from tencent.cloud.serverless.functions import errors
@@ -618,7 +620,7 @@ class AbstractClient(client.UniversalClient):
         function_runtime: str = 'Python3',
         function_type: str = None,
         function_configure: dict = None
-    ):
+    ) -> waitable.OperationWaitable:
         '''
         Create a new Cloud Function.
 
@@ -632,7 +634,11 @@ class AbstractClient(client.UniversalClient):
             function_type: Cloud Function type (enumerator: FunctionType).
             function_configure: A dictionary instance containing a
                 Cloud Function configuration.
-            
+
+        Returns:
+            Returns a waitable object representing a serverless cloud
+                function creation operation.
+
         Raises:
             ValueError: Parameter values are not as expected.
             ActionError: The related operation corresponding to
@@ -731,6 +737,28 @@ class AbstractClient(client.UniversalClient):
             action_version = '2018-04-16'
         )
 
+        async def wait_handler_async():
+            '''
+            Polling waits for function creation to complete.
+            '''
+
+            while True:
+                try:
+                    await self.get_function_info_async(region_id,
+                        namespace_name, function_name)
+                    
+                    break
+                except errors.errors.ActionError as error:
+                    if error.error_id != 'ResourceNotFound.FunctionName':
+                        raise
+
+                    await asyncio.sleep(1)
+
+        return waitable.OperationWaitable(
+            event_loop = self._get_event_loop(),
+            wait_handler = wait_handler_async
+        )
+
     def create_function(self,
         region_id: str,
         namespace_name: str,
@@ -740,7 +768,7 @@ class AbstractClient(client.UniversalClient):
         function_runtime: str = 'Python3',
         function_type: str = None,
         function_configure: dict = None
-    ):
+    ) -> waitable.OperationWaitable:
         '''
         Create a new Cloud Function.
 
@@ -754,6 +782,10 @@ class AbstractClient(client.UniversalClient):
             function_type: Cloud Function type (enumerator: FunctionType).
             function_configure: A dictionary instance containing a
                 Cloud Function configuration.
+
+        Returns:
+            Returns a waitable object representing a serverless cloud
+                function creation operation.
             
         Raises:
             ValueError: Parameter values are not as expected.
@@ -763,7 +795,7 @@ class AbstractClient(client.UniversalClient):
                 was unexpected.
         '''
 
-        self._get_event_loop().run_until_complete(self.create_function_async(region_id,
+        return self._get_event_loop().run_until_complete(self.create_function_async(region_id,
             namespace_name, function_name, function_description, function_code,
             function_runtime, function_type, function_configure))
 
@@ -2510,7 +2542,7 @@ class AbstractClient(client.UniversalClient):
         layer_content: LayerContent,
         layer_runtimes: list,
         layer_license: str = None
-    ) -> int:
+    ) -> waitable.OperationWaitable:
         '''
         Create a new layer or a new version of an already created layer.
 
@@ -2523,7 +2555,8 @@ class AbstractClient(client.UniversalClient):
             layer_license: Layer license information.
         
         Returns:
-            Returns the version number of the newly created layer or layer version.
+            Returns the waitable object representing the layer creation operation,
+                which contains the version number of the created layer.
 
         Raises:
             ValueError: Parameter values are not as expected.
@@ -2565,9 +2598,36 @@ class AbstractClient(client.UniversalClient):
         )
 
         try:
-            return int(action_result['LayerVersion'])
+            layer_version: int = int(action_result['LayerVersion'])
         except KeyError as error:
             raise errors.errors.ActionResultError('missing field: ' + str(error))
+
+        async def wait_handler_async() -> int:
+            '''
+            Polling waits for the layer to be created.
+            '''
+
+            while True:
+                try:
+                    await self.get_layer_info_async(region_id,
+                        layer_name, layer_version)
+
+                    break
+                except errors.errors.ActionError as action_error:
+                    if action_error.error_id != 'ResourceNotFound.LayerVersion':
+                        raise
+
+                    await asyncio.sleep(1)
+            
+            return layer_version
+
+        operation_waitiable: waitable.OperationWaitable = waitable.OperationWaitable(
+            event_loop = self._get_event_loop(),
+            wait_handler = wait_handler_async
+        )
+
+        operation_waitiable.set_result(layer_version)
+        return operation_waitiable
 
     def create_layer(self,
         region_id: str,
@@ -2576,7 +2636,7 @@ class AbstractClient(client.UniversalClient):
         layer_content: LayerContent,
         layer_runtimes: list,
         layer_license: str = None
-    ) -> int:
+    ) -> waitable.OperationWaitable:
         '''
         Create a new layer or a new version of an already created layer.
 
@@ -2589,7 +2649,8 @@ class AbstractClient(client.UniversalClient):
             layer_license: Layer license information.
         
         Returns:
-            Returns the version number of the newly created layer or layer version.
+            Returns the waitable object representing the layer creation operation,
+                which contains the version number of the created layer.
 
         Raises:
             ValueError: Parameter values are not as expected.
@@ -2603,8 +2664,8 @@ class AbstractClient(client.UniversalClient):
     async def delete_layer_async(self,
         region_id: str,
         layer_name: str,
-        layer_version: int
-    ):
+        layer_version: int = None
+    ) -> int:
         '''
         Deletes a specified version of a layer that has been created.
 
@@ -2612,6 +2673,9 @@ class AbstractClient(client.UniversalClient):
             region_id: Data center unique identifier.
             layer_name: Layer unique name.
             layer_version: Layer version number.
+
+        Returns:
+            Returns the number of deleted layer versions.
         
         Raises:
             ValueError: Parameter values are not as expected.
@@ -2623,24 +2687,43 @@ class AbstractClient(client.UniversalClient):
         if not layer_name or not isinstance(layer_name, str):
             raise ValueError('<layer_name> value invalid')
 
-        if not layer_version or not isinstance(layer_version, int):
-            raise ValueError('<layer_version> value invalid')
+        if layer_version:
+            if not isinstance(layer_version, int):
+                raise ValueError('<layer_version> value invalid')
+        
+            await self.action_async(
+                region_id = region_id,
+                action_id = 'DeleteLayerVersion',
+                action_parameters = {
+                    'LayerName': layer_name,
+                    'LayerVersion': layer_version
+                },
+                action_version = '2018-04-16'
+            )
 
-        await self.action_async(
-            region_id = region_id,
-            action_id = 'DeleteLayerVersion',
-            action_parameters = {
-                'LayerName': layer_name,
-                'LayerVersion': layer_version
-            },
-            action_version = '2018-04-16'
-        )
+            return 1
+        else:
+            delete_coroutines: list = list()
+
+            async for info in self.list_layer_versions_async(
+                region_id = region_id,
+                layer_name = layer_name
+            ):
+                delete_coroutines.append(
+                    self.delete_layer_async(region_id, layer_name,
+                        info['version'])
+                )
+
+            await asyncio.gather(*delete_coroutines,
+                loop = self._get_event_loop())
+
+            return len(delete_coroutines)
 
     def delete_layer(self,
         region_id: str,
         layer_name: str,
-        layer_version: int
-    ):
+        layer_version: int = None
+    ) -> int:
         '''
         Deletes a specified version of a layer that has been created.
 
@@ -2649,6 +2732,9 @@ class AbstractClient(client.UniversalClient):
             layer_name: Layer unique name.
             layer_version: Layer version number.
         
+        Returns:
+            Returns the number of deleted layer versions.
+
         Raises:
             ValueError: Parameter values are not as expected.
         '''

@@ -39,7 +39,7 @@ class VersionInfo:
 
     MAJOR: int = 0
     MINOR: int = 1
-    REVISION: int = 4
+    REVISION: int = 5
 
 def get_version_text() -> str:
     '''
