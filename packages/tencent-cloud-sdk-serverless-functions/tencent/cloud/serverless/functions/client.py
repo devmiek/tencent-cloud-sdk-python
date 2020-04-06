@@ -749,9 +749,14 @@ class AbstractClient(client.UniversalClient):
                     
                     break
                 except errors.errors.ActionError as error:
-                    if error.error_id != 'ResourceNotFound.FunctionName':
-                        raise
+                    # Cannot tell the difference between `ResourceNotFound.Function`
+                    # and `ResourceNotFound.FunctionName`
 
+                    if (error.error_id != 'ResourceNotFound.FunctionName' and
+                        error.error_id != 'ResourceNotFound.Function'
+                    ):
+                        raise
+                                        
                     await asyncio.sleep(1)
 
         return waitable.OperationWaitable(
@@ -2613,8 +2618,8 @@ class AbstractClient(client.UniversalClient):
                         layer_name, layer_version)
 
                     break
-                except errors.errors.ActionError as action_error:
-                    if action_error.error_id != 'ResourceNotFound.LayerVersion':
+                except errors.errors.ActionError as error:
+                    if error.error_id != 'ResourceNotFound.LayerVersion':
                         raise
 
                     await asyncio.sleep(1)
