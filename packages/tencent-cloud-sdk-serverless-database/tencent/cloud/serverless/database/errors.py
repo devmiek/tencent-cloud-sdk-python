@@ -26,5 +26,3 @@
 Define the exception types that apply to Tencent Cloud's
     serverless database products.
 '''
-
-from tencent.cloud.core import errors

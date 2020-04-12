@@ -30,7 +30,6 @@ Object-oriented client types that implement Tencent Cloud's
 '''
 
 from tencent.cloud.core import client
-from tencent.cloud.core import waitable
 
 from tencent.cloud.serverless.database import errors
 from tencent.cloud.serverless.database import helper
