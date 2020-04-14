@@ -35,6 +35,11 @@ from tencent.cloud.serverless.database import errors
 from tencent.cloud.serverless.database import helper
 
 class DatabaseCharset:
+    '''
+    A character set type enumerator supported by
+        serverless databases.
+    '''
+
     UTF8: str = 'UTF8'
     LATIN1: str = 'LATIN1'
 

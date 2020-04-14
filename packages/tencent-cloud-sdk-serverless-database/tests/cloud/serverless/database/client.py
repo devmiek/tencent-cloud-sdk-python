@@ -45,10 +45,16 @@ def main():
         }
     )
 
-    print('info: instance id = ' + str(instance_info['id']))
+    print('database instance id: ' + str(instance_info['id']))
 
     for info in client.list_instances('ap-shanghai'):
         print(json.dumps(info, indent = 2), end = '\n\n')
+
+    client.set_instance_extranet(
+        region_id = 'ap-shanghai',
+        instance_id = instance_info['id'],
+        instance_extranet = True
+    )
 
     client.delete_instance(
         region_id = 'ap-shanghai',
