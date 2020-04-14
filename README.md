@@ -149,5 +149,11 @@ for zone_info in action_result['ZoneSet']:
 
 For more ways to use Tencent Cloud SDK for Python, see our online documentation. Thank you!
 
+## To Do
+The next things we need to accomplish are:
+
+- [ ] Write and publish component package coding conventions.
+- [ ] Add more component packs to support active Tencent Cloud products.
+
 ## Other
 If you encounter any problems during use, you are welcome to navigate to the [Issues](https://github.com/nobody-night/tencent-cloud-sdk-python/issues) page to submit and we will be happy to assist you with the problem.
