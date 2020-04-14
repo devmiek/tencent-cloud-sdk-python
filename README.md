@@ -155,5 +155,10 @@ The next things we need to accomplish are:
 - [ ] Write and publish component package coding conventions.
 - [ ] Add more component packs to support active Tencent Cloud products.
 
+## License
+The Tencent Cloud SDK for Python is open source using the MIT license, which means that your use is subject to the license, please [view](LICENSE) license details.
+
+It is worth noting that the Tencent Cloud SDK for Python is using a number of open source dependency packages that are located within a package called `tencent-cloud-sdk-common`. Our use of these dependency packages is governed by the open source license issued with them, and details of the dependency packages can be found at [Common Component Package](https://github.com/nobody-night/tencent-cloud-sdk-python/tree/master/packages/tencent-cloud-sdk-common).
+
 ## Other
 If you encounter any problems during use, you are welcome to navigate to the [Issues](https://github.com/nobody-night/tencent-cloud-sdk-python/issues) page to submit and we will be happy to assist you with the problem.
