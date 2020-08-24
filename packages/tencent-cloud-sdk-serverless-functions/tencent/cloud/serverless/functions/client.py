@@ -517,7 +517,7 @@ class AbstractClient(client.UniversalClient):
             if not isinstance(namespace_name, str):
                 raise ValueError('<namespace_name> value invalid')
         else:
-            namespace_name = 'default'
+            namespace_name = helper.get_cloud_function_namespace_name()
 
         if not function_name or not isinstance(function_name, str):
             raise ValueError('<function_name> value invalid')

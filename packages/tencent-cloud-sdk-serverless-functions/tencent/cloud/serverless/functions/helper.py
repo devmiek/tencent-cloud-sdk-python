@@ -171,3 +171,26 @@ def get_cloud_function_region_id() -> str:
         return os.environ['TENCENTCLOUD_REGION']
     except KeyError:
         raise EnvironmentError('missing environment variable <TENCENTCLOUD_REGION>')
+
+def get_cloud_function_namespace_name() -> str:
+    '''
+    Get the name of the namespace where the current serverless cloud
+        function is located. If reading the namespace name fails, the
+        default namespace name is'default'.
+    
+    Please note that this function is only supported when running
+        within a Serverless Cloud Function container instance or
+        simulation environment.
+
+    Returns:
+        Returns a string of the namespace name.
+    
+    Raises:
+        EnvironmentError: The current operating environment is not as
+            expected.
+    '''
+
+    try:
+        return os.environ['SCF_NAMESPACE']
+    except KeyError:
+        return 'default'

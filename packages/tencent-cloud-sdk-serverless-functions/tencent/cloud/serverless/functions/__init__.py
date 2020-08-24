@@ -924,6 +924,12 @@ def invoke(
         ActionError: Invoke Cloud Function error.
     '''
     
+    if not region_id:
+        region_id = helper.get_cloud_function_region_id()
+    
+    if not namespace_name:
+        namespace_name = helper.get_cloud_function_namespace_name()
+
     return fetch_client().easy_invoke(region_id, namespace_name,
         function_name, function_event, function_version, function_async)
 
@@ -961,7 +967,13 @@ async def invoke_async(
         InvokeError: Invoke Cloud Function failed.
         ActionError: Invoke Cloud Function error.
     '''
+
+    if not region_id:
+        region_id = helper.get_cloud_function_region_id()
     
+    if not namespace_name:
+        namespace_name = helper.get_cloud_function_namespace_name()
+
     return await fetch_client().easy_invoke_async(region_id,
         namespace_name, function_name, function_event,
         function_version, function_async)
