@@ -35,13 +35,13 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk-common',
-    version = '0.1.1',
+    version = '0.1.2',
     packages = [
         'tencent.cloud.common',
         'tencent.cloud.common.aiohttp',
         'tencent.cloud.common.async_timeout',
         'tencent.cloud.common.attr',
-        'tencent.cloud.common.chardet',
+        'tencent.cloud.common.charset_normalizer',
         'tencent.cloud.common.idna',
         'tencent.cloud.common.multidict',
         'tencent.cloud.common.yarl',

@@ -24,7 +24,7 @@ To facilitate the deployment and migration of the Tencent Cloud SDK for Python, 
 - https://pypi.org/project/aiohttp/
 - https://pypi.org/project/async-timeout/
 - https://github.com/python-attrs/attrs
-- https://pypi.org/project/chardet/
+- https://pypi.org/project/charset-normalizer/
 - https://pypi.org/project/multidict/
 - https://pypi.org/project/yarl/
 - https://pypi.org/project/idna/
