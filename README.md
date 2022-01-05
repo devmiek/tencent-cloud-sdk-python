@@ -9,6 +9,8 @@ By integrating and using the Tencent Cloud SDK for Python, you can achieve fast 
 
 **Features:** Tencent Cloud SDK for Python supports full asynchronous programming.
 
+It is important to note that you cannot use `asyncio.run` to call asynchronous entry functions. See the [asynchronous programming example code](examples/quickstart.py) for details.
+
 ## Navigation
 - [Homepage](https://github.com/nobody-night/tencent-cloud-sdk-python)
 - Documentation
@@ -107,7 +109,7 @@ The method `easy_invoke` will attempt to infer the return value in the given Clo
 
 **Tips:** If an error occurs for a given Cloud Function runtime, an `InvokeError` exception is thrown. The above exceptions are defined in the `tencent.cloud.serverless.functions.errors` module.
 
-See the [Quick-Start](quickstart.py) source code for the complete demo code.
+See the [examples source code](examples) for the complete demo code.
 
 ### Other Tencent Cloud Products
 For Tencent Cloud products that do not yet provide a product client in the Tencent Cloud SDK, a universal client can be used.
