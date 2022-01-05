@@ -2,7 +2,7 @@
 
 # MIT License
 # 
-# Copyright (c) 2020 Tencent Cloud.
+# Copyright (c) 2021 Handle.
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,13 +35,16 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk-common',
-    version = '0.1.2',
+    version = '0.1.3',
     packages = [
         'tencent.cloud.common',
         'tencent.cloud.common.aiohttp',
+        'tencent.cloud.common.aiosignal',
         'tencent.cloud.common.async_timeout',
         'tencent.cloud.common.attr',
         'tencent.cloud.common.charset_normalizer',
+        'tencent.cloud.common.charset_normalizer.assets',
+        'tencent.cloud.common.frozenlist',
         'tencent.cloud.common.idna',
         'tencent.cloud.common.multidict',
         'tencent.cloud.common.yarl',

@@ -5,10 +5,14 @@ import warnings
 from types import TracebackType
 from typing import Any, Optional, Type
 
-from typing_extensions import final
+
+if sys.version_info >= (3, 8):
+    from typing import final
+else:
+    from typing_extensions import final
 
 
-__version__ = "4.0.1"
+__version__ = "4.0.2"
 
 
 __all__ = ("timeout", "timeout_at", "Timeout")
@@ -105,9 +109,9 @@ class Timeout:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException],
-        exc_val: BaseException,
-        exc_tb: TracebackType,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:
         self._do_exit(exc_type)
         return None
@@ -118,9 +122,9 @@ class Timeout:
 
     async def __aexit__(
         self,
-        exc_type: Type[BaseException],
-        exc_val: BaseException,
-        exc_tb: TracebackType,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:
         self._do_exit(exc_type)
         return None
@@ -202,7 +206,7 @@ class Timeout:
         self._state = _State.ENTER
         self._reschedule()
 
-    def _do_exit(self, exc_type: Type[BaseException]) -> None:
+    def _do_exit(self, exc_type: Optional[Type[BaseException]]) -> None:
         if exc_type is asyncio.CancelledError and self._state == _State.TIMEOUT:
             self._timeout_handler = None
             raise asyncio.TimeoutError
@@ -223,7 +227,6 @@ if sys.version_info >= (3, 7):
     def _current_task(loop: asyncio.AbstractEventLoop) -> "Optional[asyncio.Task[Any]]":
         return asyncio.current_task(loop=loop)
 
-
 else:
 
     def _current_task(loop: asyncio.AbstractEventLoop) -> "Optional[asyncio.Task[Any]]":
@@ -234,7 +237,6 @@ if sys.version_info >= (3, 7):
 
     def _get_running_loop() -> asyncio.AbstractEventLoop:
         return asyncio.get_running_loop()
-
 
 else:
 

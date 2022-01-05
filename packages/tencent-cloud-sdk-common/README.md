@@ -22,12 +22,15 @@ This package includes the third-party packages that the Tencent Cloud SDK for Py
 To facilitate the deployment and migration of the Tencent Cloud SDK for Python, we have encapsulated the dependent packages in a package called `tencent-cloud-sdk-common`, which are:
 
 - https://pypi.org/project/aiohttp/
+- https://pypi.org/project/aiosignal/
 - https://pypi.org/project/async-timeout/
-- https://github.com/python-attrs/attrs
+- https://pypi.org/project/attr/
 - https://pypi.org/project/charset-normalizer/
 - https://pypi.org/project/multidict/
 - https://pypi.org/project/yarl/
 - https://pypi.org/project/idna/
+- https://pypi.org/project/idna_ssl/
+- https://pypi.org/project/typing-extensions/
 
 It is worth noting that our use of these dependent packages is subject to their open source licenses.
 

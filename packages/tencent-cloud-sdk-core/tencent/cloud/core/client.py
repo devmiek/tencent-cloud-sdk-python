@@ -2,7 +2,7 @@
 
 # MIT License
 # 
-# Copyright (c) 2020 Tencent Cloud.
+# Copyright (c) 2021 Handle.
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -89,10 +89,10 @@ class BaseClient:
         else:
             try:
                 self.__access_credentials: credentials.Credentials = (
-                    credentials.FileCredentials('secret.json'))
-            except FileNotFoundError:
-                self.__access_credentials: credentials.Credentials = (
                     credentials.EnvironmentalCredentials())
+            except EnvironmentError:
+                self.__access_credentials: credentials.Credentials = (
+                    credentials.FileCredentials())
 
         if access_proxies:
             if not isinstance(access_proxies, proxies.Proxies):

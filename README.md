@@ -69,6 +69,16 @@ access_credentials = credentials.Credentials(
 
 The `secret_id` and `secret_key` given in the sample code above are demo credentials. You need to go to the [Tencent Cloud Console](https://console.cloud.tencent.com/cam/capi) to obtain credentials for your account.
 
+##### Environmental Credentials
+The best practice is to use environmental credentials. By default, the SDK will automatically search for environment variables named `TENCENTCLOUD_SECRETID` and `TENCENTCLOUD_SECRETKEY`. If you need to customize the name of an environment variable, you must explicitly initialize the `credentials.EnvironmentalCredentials` class.
+
+##### File Credentials
+Alternatively, you can use file credentials. By default, the SDK will automatically search for a credentials file named `credentials.json` in the `.`, `./.tencent` and `~/.tencent` directories. The credentials file contains 2 attributes, `secretId` and `secretKey`. If you need to customize the path to the credentials file, you must explicitly initialize the `credentials.FileCredentials` class.
+
+By default, you do not need to explicitly initialize any credentials, and the relevant parameters should always be set to `None` or ignored.
+
+Remember, please prioritize the use of environmental credentials or file credentials over hard-coded credentials. For more details, please see `credentials.EnvironmentalCredentials` and `credentials.FileCredentials`. 
+
 #### Product Client
 Then, we need to instantiate a product client for Serverless Cloud Function:
 

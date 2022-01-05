@@ -1,5 +1,3 @@
-# tencent.cloud.serverless.database.errors is python-3.6 source file
-
 # MIT License
 # 
 # Copyright (c) 2021 Handle.
@@ -23,6 +21,34 @@
 # SOFTWARE.
 
 '''
-Define the exception types that apply to Tencent Cloud's
-    serverless database products.
+Implemented the Tencent Cloud SDK helper functions.
 '''
+
+import asyncio
+
+def run_with_asyncio(
+    coroutine: asyncio.Future
+):
+    '''
+    Create a new event loop and call the given coroutine. The caller will be
+    blocked until the coroutine completes.
+
+    In general, run_with_asyncio is used instead of asyncio.run to avoid
+    compatibility issues. The caller should only call at the entry point.
+
+    The event loop created will be set as the global default event loop and
+    will not be closed until the process terminates.
+
+    Args:
+        coroutine: Coroutine that need to be called on the event loop.
+
+    Raises:
+        ValueError: The given coroutine is invalid.
+    '''
+
+    if not asyncio.iscoroutine(coroutine):
+        raise ValueError('future is not coroutine')
+
+    event_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+    asyncio.set_event_loop(event_loop)
+    event_loop.run_until_complete(coroutine)

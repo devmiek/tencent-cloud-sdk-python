@@ -2,7 +2,7 @@
 
 # MIT License
 # 
-# Copyright (c) 2020 Tencent Cloud.
+# Copyright (c) 2021 Handle.
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk-core',
-    version = '0.2.2',
+    version = '0.2.3',
     packages = [
         'tencent.cloud.core'
     ],
@@ -62,7 +62,7 @@ setuptools.setup(
         # 'Development Status :: 4 - Beta'
     ],
     install_requires = [
-        'tencent-cloud-sdk-auth>=0.2.1',
-        'tencent-cloud-sdk-common>=0.1.2'
+        'tencent-cloud-sdk-auth>=0.2.2',
+        'tencent-cloud-sdk-common>=0.1.3'
     ]
 )

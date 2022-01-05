@@ -2,7 +2,7 @@
 
 # MIT License
 # 
-# Copyright (c) 2020 Tencent Cloud.
+# Copyright (c) 2021 Handle.
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -443,9 +443,21 @@ class FileCredentials(Credentials):
     '''
     
     def __init__(self,
-        secret_file_name: str
+        secret_file_name: str = None
     ):
-        if not secret_file_name or not isinstance(secret_file_name, str):
+        if not secret_file_name:
+            search_name: list = [
+                './credentials.json',
+                './.tencent/credentials.json',
+                '~/.tencent/credentials.json'
+            ]
+            for name in search_name:
+                if os.access(name, os.R_OK):
+                    secret_file_name = name
+                    break
+            else:
+                raise ValueError('no credentials file found')
+        elif not isinstance(secret_file_name, str):
             raise ValueError('<secret_file_name> value invalid')
 
         if not os.access(secret_file_name, os.R_OK):
