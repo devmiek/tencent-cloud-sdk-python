@@ -9,7 +9,7 @@ By integrating and using the Tencent Cloud SDK for Python, you can achieve fast 
 
 **Features:** Tencent Cloud SDK for Python supports full asynchronous programming.
 
-It is important to note that you cannot use `asyncio.run` to call asynchronous entry functions. See the [asynchronous programming example code](examples/quickstart.py) for details.
+It is important to note that you cannot use `asyncio.run` to call asynchronous entry functions. See the [asynchronous programming example code](examples/invoke_cloud_function_async.py) for details.
 
 ## Navigation
 - [Homepage](https://github.com/nobody-night/tencent-cloud-sdk-python)
