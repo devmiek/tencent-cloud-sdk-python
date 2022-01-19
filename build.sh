@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 pip install build
 rm -rf ./dist
