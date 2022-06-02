@@ -3,7 +3,7 @@
 [![license](https://img.shields.io/github/license/nobody-night/stopwatch-python)](LICENSE)
 [![pypi](https://img.shields.io/pypi/v/tencent-cloud-sdk)](https://pypi.org/project/tencent-cloud-sdk/)
 
-Tencent Cloud SDK for Python, which provides an easier-to-use abstract client and advanced features.
+A simple, efficient and easy to use Tencent Cloud SDK implemented in Python.
 
 By integrating and using the Tencent Cloud SDK for Python, you can achieve fast and secure access to the Tencent Cloud API in an object-oriented programming manner, without having to pay attention to implementation details.
 
