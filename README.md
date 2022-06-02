@@ -13,12 +13,9 @@ It is important to note that you cannot use `asyncio.run` to call asynchronous e
 
 ## Navigation
 - [Homepage](https://github.com/nobody-night/tencent-cloud-sdk-python)
-- Documentation
-  - [English (Writing...)](https://smallso.gitbook.io/tencent-cloud-sdk/v/english/)
-  - [简体中文](https://smallso.gitbook.io/tencent-cloud-sdk/)
+- [Documentation](https://smallso.gitbook.io/tencent-cloud-sdk/)
 - [Release Notes](https://github.com/nobody-night/tencent-cloud-sdk-python/releases)
 - [License](LICENSE)
-- [Author Homepage](https://cloud.tencent.com/)
 
 ## Installation
 With the Python package manager, you can quickly install the Tencent Cloud SDK for Python.
@@ -132,7 +129,7 @@ Since the Tencent Cloud product we need to use does not provide a product client
 Below we take Cloud Virtual Machine (CVM) products as an example:
 
 ```python
-virtual_machine_client: client.UniversalClient = client.UniversalClient(
+cvm_client = client.UniversalClient(
     product_id = 'cvm',     # Unique identifier of the product
     access_credentials = access_credentials    # Access credentials
 )
@@ -142,9 +139,10 @@ virtual_machine_client: client.UniversalClient = client.UniversalClient(
 Finally, we try to retrieve Zone information operated by a given data center campus, which will use the Tencent Cloud API called [DescribeZones](https://cloud.tencent.com/document/api/213/15707):
 
 ```python
-action_result: dict = virtual_machine_client.action(
+action_result: dict = cvm_client.action(
     region_id = 'ap-shanghai',      # Unique identifier of the data center
     action_id = 'DescribeZones',    # Unique identifier of the Tencent Cloud API
+    action_parameters = None,
     action_version = '2017-03-12'   # Version name of the Tencent Cloud API
 )
 ```
@@ -159,12 +157,6 @@ for zone_info in action_result['ZoneSet']:
 ```
 
 For more ways to use Tencent Cloud SDK for Python, see our online documentation. Thank you!
-
-## To Do
-The next things we need to accomplish are:
-
-- [ ] Write and publish component package coding conventions.
-- [ ] Add more component packs to support active Tencent Cloud products.
 
 ## License
 The Tencent Cloud SDK for Python is open source using the MIT license, which means that your use is subject to the license, please [view](LICENSE) license details.

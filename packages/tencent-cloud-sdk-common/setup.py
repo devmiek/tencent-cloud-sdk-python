@@ -35,7 +35,7 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk-common',
-    version = '0.1.3',
+    version = '0.1.4',
     packages = [
         'tencent.cloud.common',
         'tencent.cloud.common.aiohttp',
@@ -48,6 +48,7 @@ setuptools.setup(
         'tencent.cloud.common.idna',
         'tencent.cloud.common.multidict',
         'tencent.cloud.common.yarl',
+        'tencent.cloud.common.certifi',
     ],
     keywords = 'tencent-cloud sdk-python',
     license = 'MIT License',

@@ -44,20 +44,72 @@ Example:
     )
 '''
 
+import os
+import ssl
 import json
 import time
 import random
 import asyncio
 
-try:
-    import aiohttp
-except ImportError:
-    from tencent.cloud.common import aiohttp
+from tencent.cloud.common import aiohttp
+from tencent.cloud.common import certifi
 
 from tencent.cloud.core import errors
 from tencent.cloud.core import version
 from tencent.cloud.core import proxies
 from tencent.cloud.auth import credentials
+
+_common_ssl_context: ssl.SSLContext = None
+
+def get_common_ssl_context() -> ssl.SSLContext:
+    '''
+    Get common SSL contexts. If the common SSL context does not
+    exist, a new one is created.
+    
+    The returned SSL context uses the internal CA root certificate.
+    For more information, see https://github.com/certifi/python-certifi
+    '''
+
+    global _common_ssl_context
+
+    if not _common_ssl_context:
+        _common_ssl_context = ssl.create_default_context(
+            cafile = certifi.where()
+        )
+    
+    return _common_ssl_context
+
+def set_common_ssl_context(
+    ssl_context: ssl.SSLContext
+):
+    '''
+    Set a common SSL context.
+    '''
+
+    if not ssl_context or not isinstance(ssl_context, ssl.SSLContext):
+        raise ValueError('ssl context is invalid')
+
+    global _common_ssl_context
+    _common_ssl_context = ssl_context
+
+def has_common_ssl_context() -> bool:
+    '''
+    Whether the common SSL context already exists.
+    '''
+
+    return _common_ssl_context != None
+
+def need_common_ssl_context() -> bool:
+    '''
+    Evaluate the need to use common SSL context instead of global
+    default SSL context.
+
+    This checks if the SSL global CA root certificate file exists
+    and is readable.    
+    '''
+
+    default_verify_paths: ssl.DefaultVerifyPaths = ssl.get_default_verify_paths()
+    return not default_verify_paths.cafile or not os.access(default_verify_paths.cafile, os.R_OK)
 
 class BaseClient:
     '''
@@ -117,6 +169,10 @@ class BaseClient:
             conn_timeout = 5,
             read_timeout = 5
         )
+
+        self.__ssl_context: ssl.SSLContext = None
+        if need_common_ssl_context():
+            self.__ssl_context = get_common_ssl_context()
 
         self.__last_response_metadata: dict = None
 
@@ -272,6 +328,20 @@ class BaseClient:
         
         self.__access_proxies = access_proxies
 
+    def set_ssl_context(
+        self,
+        ssl_context: ssl.SSLContext
+    ):
+        '''
+        Set the SSL context to replace the global SSL context
+        or the common SSL context.
+        '''
+
+        if not ssl_context or not isinstance(ssl_context, ssl.SSLContext):
+            raise ValueError('ssl context is invalid')
+
+        self.__ssl_context = ssl_context
+
     @property
     def proxies(self) -> proxies.Proxies:
         '''
@@ -279,6 +349,15 @@ class BaseClient:
         '''
 
         return self.__access_proxies
+
+    @property
+    def ssl_context(self) -> ssl.SSLContext:
+        '''
+        The client's SSL context. If the global SSL context is
+        being used, the value is None.
+        '''
+
+        return self.__ssl_context
 
     async def _try_request_action_async(self,
         region_id: str,
@@ -362,7 +441,8 @@ class BaseClient:
                     self.__access_proxies.proxy_auth['username'],
                     self.__access_proxies.proxy_auth['password']
                 ) if self.__access_proxies and
-                    self.__access_proxies.proxy_auth else None)
+                    self.__access_proxies.proxy_auth else None),
+                ssl_context = self.__ssl_context
             )
 
             response_context.raise_for_status()

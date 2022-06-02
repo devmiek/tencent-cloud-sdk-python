@@ -31,6 +31,7 @@ To facilitate the deployment and migration of the Tencent Cloud SDK for Python, 
 - https://pypi.org/project/idna/
 - https://pypi.org/project/idna_ssl/
 - https://pypi.org/project/typing-extensions/
+- https://pypi.org/project/certifi/
 
 It is worth noting that our use of these dependent packages is subject to their open source licenses.
 

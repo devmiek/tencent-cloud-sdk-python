@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pip install build
+pip3 install build
 rm -rf ./dist
 
 build_package() {
