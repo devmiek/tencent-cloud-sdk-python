@@ -1,8 +1,4 @@
-# setup is python-3.6 source file
-
-# MIT License
-# 
-# Copyright (c) 2021 Handle.
+# Copyright (c) 2022 MIEK
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +31,7 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk',
-    version = '0.2.5',
+    version = '0.2.6',
     keywords = 'tencent-cloud sdk-python',
     license = 'MIT License',
     author = 'MIEK',
@@ -49,17 +45,17 @@ setuptools.setup(
     url = 'https://github.com/nobody-night/tencent-cloud-sdk-python',
     python_requires = '>=3.6',
     zip_safe = False,
-    classifiers = (
+    classifiers = [
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Development Status :: 5 - Production/Stable'
         # 'Development Status :: 4 - Beta'
-    ),
+    ],
     install_requires = [
         'tencent-cloud-sdk-auth>=0.2.2',
-        'tencent-cloud-sdk-core>=0.2.4',
-        'tencent-cloud-sdk-serverless-functions>=0.2.3',
-        'tencent-cloud-sdk-serverless-database>=0.1.2'
+        'tencent-cloud-sdk-core>=0.2.5',
+        'tencent-cloud-sdk-serverless-functions>=0.2.4',
+        'tencent-cloud-sdk-serverless-database>=0.1.3'
     ]
 )

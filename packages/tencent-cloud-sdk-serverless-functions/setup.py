@@ -1,8 +1,4 @@
-# setup is python-3.6 source file
-
-# MIT License
-# 
-# Copyright (c) 2021 Handle.
+# Copyright (c) 2022 MIEK
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,14 +31,14 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk-serverless-functions',
-    version = '0.2.3',
+    version = '0.2.4',
     packages = [
         'tencent.cloud.serverless.functions'
     ],
     keywords = 'tencent-cloud sdk-python',
     license = 'MIT License',
-    author = 'Tencent Cloud',
-    author_email = 'support@xiaoyy.org',
+    author = 'MIEK',
+    author_email = 'king@xiaoyy.org',
     description = (
         'Tencent Cloud SDK for Python components. '
         'This package is the core component of the '
@@ -62,6 +58,6 @@ setuptools.setup(
         # 'Development Status :: 4 - Beta'
     ],
     install_requires = [
-        'tencent-cloud-sdk-core>=0.2.3'
+        'tencent-cloud-sdk-core>=0.2.5'
     ]
 )

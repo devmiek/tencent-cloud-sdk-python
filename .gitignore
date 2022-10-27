@@ -130,3 +130,4 @@ dmypy.json
 
 # tencent cloud secret
 secret.json
+.DS_Store

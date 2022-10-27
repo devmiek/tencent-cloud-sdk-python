@@ -1,8 +1,4 @@
-# setup is python-3.6 source file
-
-# MIT License
-# 
-# Copyright (c) 2021 Handle.
+# Copyright (c) 2022 MIEK
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -41,8 +37,8 @@ setuptools.setup(
     ],
     keywords = 'tencent-cloud sdk-python',
     license = 'MIT License',
-    author = 'Tencent Cloud',
-    author_email = 'support@xiaoyy.org',
+    author = 'MIEK',
+    author_email = 'king@xiaoyy.org',
     description = (
         'Tencent Cloud SDK for Python components. '
         'This package implements the access credential '
