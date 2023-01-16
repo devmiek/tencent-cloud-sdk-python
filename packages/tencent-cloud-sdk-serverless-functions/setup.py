@@ -31,7 +31,7 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk-serverless-functions',
-    version = '0.2.4',
+    version = '0.2.5',
     packages = [
         'tencent.cloud.serverless.functions'
     ],
@@ -58,6 +58,6 @@ setuptools.setup(
         # 'Development Status :: 4 - Beta'
     ],
     install_requires = [
-        'tencent-cloud-sdk-core>=0.2.5'
+        'tencent-cloud-sdk-core>=0.2.6'
     ]
 )

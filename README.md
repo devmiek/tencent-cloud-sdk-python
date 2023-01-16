@@ -106,6 +106,12 @@ The method `easy_invoke` will attempt to infer the return value in the given Clo
 
 **Tips:** If an error occurs for a given Cloud Function runtime, an `InvokeError` exception is thrown. The above exceptions are defined in the `tencent.cloud.serverless.functions.errors` module.
 
+#### Close product client
+When the instantiated client is no longer in use, we should explicitly close it:
+```python
+function_client.close()
+```
+
 See the [examples source code](examples) for the complete demo code.
 
 ### Other Tencent Cloud Products

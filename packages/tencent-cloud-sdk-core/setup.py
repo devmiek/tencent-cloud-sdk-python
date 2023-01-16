@@ -31,7 +31,7 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk-core',
-    version = '0.2.5',
+    version = '0.2.6',
     packages = [
         'tencent.cloud.core'
     ],

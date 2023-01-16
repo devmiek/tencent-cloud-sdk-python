@@ -62,6 +62,11 @@ def main():
         print('error: ' + str(error), file = sys.stderr)
     except errors.ActionError as error:
         print('error: ' + str(error), file = sys.stderr)
+    
+    # When the instantiated client is no longer in use, we should
+    # explicitly close it:
+
+    function_client.close()
 
 if __name__ == '__main__':
     main()

@@ -188,20 +188,57 @@ class BaseClient:
 
         self.__initialized = True
 
+    async def close_async(self):
+        '''
+        Close the client.
+        '''
+    
+        await self.__request_client.close()
+
+    def close(self):
+        '''
+        Close the client.
+        '''
+
+        self._get_event_loop().run_until_complete(self.close_async())
+
     def __del__(self):
-        if not self.__initialized:  # Base client instance construction error
+        if not self.__initialized or not hasattr(self, '_BaseClient__request_client'):
+            # Base client instance construction error
             return
 
-        # The event loop instance running in the hyperthreaded context
-        # of the underlying client should not be closed.
+        if self.__request_client.closed:
+            # Internal request client has been closed
+            return
 
         if self._get_event_loop().is_closed():
+            # The event loop instance running in the hyperthreaded context
+            # of the underlying client should not be closed.
             raise RuntimeError('destroy the client before the event loop closes')
 
         if not self._get_event_loop().is_running():
             self._get_event_loop().run_until_complete(self.__request_client.close())
         else:
-            self._get_event_loop().create_task(self.__request_client.close())
+            # This happens when the caller does not explicitly close the client.
+            #
+            # When the GC reclaims the client object, we cannot immediately close
+            # the internal session if there are other coroutines running. At the
+            # same time, GC also recycles and frees internal session object.
+            # When the internal session object is released, if it is not explicitly
+            # closed, it raises a warning and causes an internal connector leak.
+            #
+            # To avoid raising warning and connector leak, we need to trick the
+            # internal session into thinking it is closed. We will schedule the
+            # real close handler to run after the other coroutines have exited.
+            #
+            # This is an invasive solution that is not elegant.
+
+            async def _internal_session_close():
+                setattr(self.__request_client.connector, '_closed', False)
+                await self.__request_client.close()
+
+            setattr(self.__request_client.connector, '_closed', True)
+            self._get_event_loop().create_task(_internal_session_close())
 
     @property
     def error_manager(self) -> errors.ErrorManager:

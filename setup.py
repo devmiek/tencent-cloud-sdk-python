@@ -31,7 +31,7 @@ def read_readme_content() -> str:
 
 setuptools.setup(
     name = 'tencent-cloud-sdk',
-    version = '0.2.6',
+    version = '0.2.7',
     keywords = 'tencent-cloud sdk-python',
     license = 'MIT License',
     author = 'MIEK',
@@ -54,8 +54,8 @@ setuptools.setup(
     ],
     install_requires = [
         'tencent-cloud-sdk-auth>=0.2.2',
-        'tencent-cloud-sdk-core>=0.2.5',
-        'tencent-cloud-sdk-serverless-functions>=0.2.4',
-        'tencent-cloud-sdk-serverless-database>=0.1.3'
+        'tencent-cloud-sdk-core>=0.2.6',
+        'tencent-cloud-sdk-serverless-functions>=0.2.5',
+        'tencent-cloud-sdk-serverless-database>=0.1.4'
     ]
 )
